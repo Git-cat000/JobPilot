@@ -12,3 +12,4 @@
 - `flutter test --reporter compact`：通过
 - `flutter build apk --debug`：通过，生成 `dist/jobpilot-v1-debug.apk`
 - `flutter build apk --release --target-platform android-arm64`：失败，Flutter release artifacts 下载 connection reset
+- `gh release view v1.0.0 --json url,assets,tagName`：通过，APK release asset uploaded with matching SHA-256

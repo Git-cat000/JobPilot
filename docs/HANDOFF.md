@@ -1,5 +1,37 @@
 # HANDOFF.md
 
+## 2026-06-18 18:46 — Codex
+
+### 本次完成
+
+- 初始化 Git 仓库并提交第一版源码。
+- 创建 GitHub 私有仓库并推送 `main`。
+- 创建 `v1.0.0` 标签和 GitHub Release。
+- 将 `dist/jobpilot-v1-debug.apk` 作为 Release 附件上传。
+
+### 修改文件
+
+- `.gitignore`
+- `docs/HANDOFF.md`
+- `.ai/...`
+
+### 当前状态
+
+- GitHub 仓库：`https://github.com/Git-cat000/JobPilot`
+- GitHub Release：`https://github.com/Git-cat000/JobPilot/releases/tag/v1.0.0`
+- APK 附件：`jobpilot-v1-debug.apk`
+- APK SHA-256：`DFCE8561D981C563C20F911DDA62EC5C6DA56362561017C86A0BCEBAA5058F19`
+
+### 已知问题
+
+- 仓库为私有仓库。
+- Release 附件是 debug APK；release APK 仍需在 Flutter release artifacts 网络可用后重新构建。
+
+### 下一步建议
+
+- 网络稳定后构建 release APK 并替换 Release 附件。
+- 在 Android 真机上安装验证核心流程。
+
 ## 2026-06-18 18:15 — Codex
 
 ### 本次完成
