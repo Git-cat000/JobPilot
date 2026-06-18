@@ -51,6 +51,14 @@ flutter build ipa --release
 
 > iOS 构建必须在 macOS 上进行。首次 `flutter pub get` 会通过 Swift Package Manager 解析插件（本仓库无 Podfile，相关生成文件已被 `.gitignore` 忽略）。
 
+#### iOS 签名与安装
+
+- 在 Xcode 的 `Runner → Signing & Capabilities` 中选择 Team（个人免费 Apple ID 即可用于真机调试；上架 App Store 需付费 Apple Developer 账号）。
+- 如 `com.jobpilot.jobpilotMobile` 被占用，改成你专属的 Bundle Identifier。
+- 真机安装：用数据线连接 iPhone，Xcode 中 `Runner` 目标选到该设备后 `flutter run -d <device-id>`，或在 Xcode 里直接 Run；首次需在「设置 → 通用 → VPN与设备管理」信任开发者证书。
+- 仅模拟器：`flutter run -d <simulator-id>`，无需签名。
+- 免签名导出（仅模拟器架构，不能装真机）：`flutter build ios --debug --no-codesign`。
+
 ## 本地开发
 
 环境要求：
@@ -77,10 +85,11 @@ lib/
 assets/rules/           表头映射、状态识别、方向识别规则
 ios/                    iOS 工程与原生配置
 android/                Android 工程与原生配置
-docs/                   产品、数据结构、导入规则和交接文档
 test/                   单元测试和 Widget 测试
 test_data/              导入测试数据
 ```
+
+> 项目内部的产品/数据/交接文档（`docs/`）仅在本地维护，不纳入仓库。
 
 ## 数据与隐私
 

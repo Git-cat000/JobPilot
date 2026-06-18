@@ -69,3 +69,6 @@ app.*.map.json
 /.codegraph/
 /.cursor/
 /.claude/
+
+# Internal design/handoff docs are kept local, not published.
+/docs/
