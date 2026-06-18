@@ -4,6 +4,7 @@ import '../../core/enums/job_enums.dart';
 import '../../core/theme/app_theme.dart';
 import '../../shared/state/app_controller.dart';
 import '../../shared/widgets/app_card.dart';
+import '../applications/application_detail_page.dart';
 import '../applications/application_edit_page.dart';
 
 class DashboardPage extends StatelessWidget {
@@ -134,27 +135,40 @@ class DashboardPage extends StatelessWidget {
                 (item) => Padding(
                   padding: const EdgeInsets.only(bottom: 10),
                   child: AppCard(
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                item.companyName,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w800,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(22),
+                      onTap: () {
+                        Navigator.of(context).pushNamed(
+                          ApplicationDetailPage.routeName,
+                          arguments: item.id,
+                        );
+                      },
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  item.companyName,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w800,
+                                  ),
                                 ),
-                              ),
-                              Text(item.jobTitle),
-                            ],
+                                Text(item.jobTitle),
+                              ],
+                            ),
                           ),
-                        ),
-                        StatusPill(
-                          label: statusLabel(item.status),
-                          color: AppTheme.primary,
-                        ),
-                      ],
+                          StatusPill(
+                            label: statusLabel(
+                              item.status,
+                              language: controller.language,
+                              custom: controller.customStatuses,
+                            ),
+                            color: AppTheme.primary,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),

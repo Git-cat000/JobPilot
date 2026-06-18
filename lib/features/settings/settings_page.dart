@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/app_strings.dart';
 import '../../core/theme/app_theme.dart';
 import '../../shared/state/app_controller.dart';
 import '../../shared/widgets/app_card.dart';
@@ -10,11 +11,12 @@ class SettingsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = AppScope.watch(context);
+    final strings = AppStrings(controller.language);
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
         Text(
-          '设置',
+          strings.settings,
           style: Theme.of(
             context,
           ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w900),
@@ -22,25 +24,43 @@ class SettingsPage extends StatelessWidget {
         const SizedBox(height: 16),
         AppCard(
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              const SectionTitle('语言 / Language'),
+              const SizedBox(height: 8),
+              SegmentedButton<String>(
+                segments: [
+                  ButtonSegment(value: 'zh', label: Text(strings.chinese)),
+                  ButtonSegment(value: 'en', label: Text(strings.english)),
+                ],
+                selected: {controller.language},
+                onSelectionChanged: (value) {
+                  controller.setLanguage(value.first);
+                },
+              ),
+              const SizedBox(height: 14),
               _SettingsAction(
                 icon: Icons.file_download_outlined,
-                label: '导出 CSV',
+                label: controller.language == 'en' ? 'Export CSV' : '导出 CSV',
                 onTap: () => _export(context, controller.exportCsv()),
               ),
               _SettingsAction(
                 icon: Icons.grid_on_outlined,
-                label: '导出 XLSX',
+                label: controller.language == 'en' ? 'Export XLSX' : '导出 XLSX',
                 onTap: () => _export(context, controller.exportXlsx()),
               ),
               _SettingsAction(
                 icon: Icons.inventory_2_outlined,
-                label: '导出 .jobpack',
+                label: controller.language == 'en'
+                    ? 'Export .jobpack'
+                    : '导出 .jobpack',
                 onTap: () => _export(context, controller.exportJobpack()),
               ),
               _SettingsAction(
                 icon: Icons.restore_outlined,
-                label: '导入 .jobpack',
+                label: controller.language == 'en'
+                    ? 'Import .jobpack'
+                    : '导入 .jobpack',
                 onTap: () => _confirmRestore(context, controller),
               ),
             ],

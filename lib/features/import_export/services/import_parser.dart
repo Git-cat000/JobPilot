@@ -60,11 +60,13 @@ class ImportParser {
 
   static const aliases = {
     'company_name': ['公司', '公司名称', '企业', '单位', '投递公司', '目标公司'],
-    'job_title': ['岗位', '职位', '职位名称', '申请岗位', 'Job Title'],
-    'status': ['状态', '流程', '进度', '求职状态', '面试状态', '投递状态'],
-    'apply_date': ['日期', '投递日期', '投递时间', '申请时间', '提交时间'],
-    'city': ['城市', '地点', '工作地点', 'base', 'Base'],
-    'channel': ['渠道', '投递渠道', '来源', '平台'],
+    'job_title': ['岗位', '岗位名称', '职位', '职位名称', '申请岗位', 'Job Title'],
+    'job_direction': ['方向', '岗位方向', '职位方向', '求职方向'],
+    'status': ['状态', '流程', '进度', '当前状态', '求职状态', '面试状态', '投递状态'],
+    'apply_date': ['日期', '投递日期', '投递时间', '申请时间', '申请日期', '提交时间'],
+    'next_follow_date': ['下次跟进', '下次跟进日期', '跟进日期', '跟进时间'],
+    'city': ['城市', '地点', '工作地点', '工作城市', 'base', 'Base'],
+    'channel': ['渠道', '投递渠道', '来源', '平台', '投递平台'],
     'jd_link': ['链接', '岗位链接', '招聘链接', 'URL', 'url'],
     'remark': ['备注', '说明', '记录', '补充信息'],
     'priority': ['优先级', '重要程度'],
@@ -104,9 +106,7 @@ class ImportParser {
     final workbook = Excel.decodeBytes(bytes);
     final firstSheetName = workbook.tables.keys.first;
     final sheet = workbook.tables[firstSheetName]!;
-    final rows = sheet.rows
-        .map((row) => row.map((cell) => cell?.value?.toString() ?? '').toList())
-        .toList();
+    final rows = sheet.rows.map((row) => row.map(_cellText).toList()).toList();
     return _parseTable(fileName, rows, existing);
   }
 
@@ -123,7 +123,7 @@ class ImportParser {
       );
     }
 
-    final headers = table.first.map((cell) => cell.toString().trim()).toList();
+    final headers = table.first.map((cell) => cell.toString()).toList();
     final mapping = _buildMapping(headers);
     final previewRows = <ImportPreviewRow>[];
 
@@ -141,6 +141,9 @@ class ImportParser {
       }
 
       final statusText = values['status'] ?? '';
+      final explicitDirection = _directionFromImportedValue(
+        values['job_direction'] ?? '',
+      );
       final directionText = [
         values['job_title'] ?? '',
         values['remark'] ?? '',
@@ -150,12 +153,14 @@ class ImportParser {
       final record = ApplicationRecord.create(
         companyName: values['company_name'] ?? '',
         jobTitle: values['job_title'] ?? '',
-        jobDirection: classifier.detectDirection(directionText),
+        jobDirection:
+            explicitDirection ?? classifier.detectDirection(directionText),
         city: values['city'] ?? '',
         channel: values['channel'] ?? '',
         status: classifier.detectStatus(statusText),
         priority: values['priority'] ?? 'B',
         applyDate: values['apply_date'] ?? '',
+        nextFollowDate: values['next_follow_date'] ?? '',
         jdLink: values['jd_link'] ?? '',
         resumeVersion: values['resume_version'] ?? '',
         salaryRange: values['salary_range'] ?? '',
@@ -185,15 +190,63 @@ class ImportParser {
   Map<String, String> _buildMapping(List<String> headers) {
     final mapping = <String, String>{};
     for (final header in headers) {
+      final normalizedHeader = _normalizeHeader(header);
       for (final entry in aliases.entries) {
-        final candidates = entry.value.map((alias) => alias.toLowerCase());
-        if (candidates.contains(header.toLowerCase())) {
+        final candidates = entry.value.map(_normalizeHeader);
+        if (candidates.contains(normalizedHeader)) {
           mapping[header] = entry.key;
           break;
         }
       }
     }
     return mapping;
+  }
+
+  String _normalizeHeader(String value) {
+    return value
+        .replaceAll('\ufeff', '')
+        .replaceAll(RegExp(r'（.*?）|\(.*?\)'), '')
+        .replaceAll(RegExp(r'[\s:：_\-—/\\|]+'), '')
+        .trim()
+        .toLowerCase();
+  }
+
+  String? _directionFromImportedValue(String value) {
+    final normalized = _normalizeHeader(value);
+    const labels = {
+      'semiconductor': ['semiconductor', '半导体'],
+      'ai_algorithm': ['aialgorithm', 'ai算法', '算法', '人工智能'],
+      'quant': ['quant', '量化'],
+      'internet_dev': ['internetdev', '互联网开发', '开发', '软件开发', '客户端开发'],
+      'embedded': ['embedded', '嵌入式', '固件'],
+      'data_analysis': ['dataanalysis', '数据分析', 'bi'],
+      'product': ['product', '产品', '产品经理'],
+      'operations': ['operations', '运营'],
+      'finance': ['finance', '金融', '投研'],
+      'consulting': ['consulting', '咨询'],
+      'research': ['research', '科研', '研究'],
+      'other': ['other', '其他'],
+    };
+    for (final entry in labels.entries) {
+      if (entry.value.map(_normalizeHeader).contains(normalized)) {
+        return entry.key;
+      }
+    }
+    return null;
+  }
+
+  String _cellText(Data? cell) {
+    final value = cell?.value;
+    if (value == null) {
+      return '';
+    }
+    if (value is TextCellValue) {
+      return value.value.text ?? '';
+    }
+    if (value is DateCellValue) {
+      return value.asDateTimeLocal().toIso8601String().split('T').first;
+    }
+    return value.toString();
   }
 
   ImportRowStatus? _duplicateStatus(

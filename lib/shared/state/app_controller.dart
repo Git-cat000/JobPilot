@@ -6,11 +6,15 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/widgets.dart';
 import 'package:path/path.dart' as p;
 
+import '../../core/enums/job_enums.dart';
 import '../../data/db/app_database.dart';
 import '../../data/models/application_record.dart';
+import '../../data/models/app_option.dart';
 import '../../data/models/import_log.dart';
 import '../../data/models/stage_record.dart';
 import '../../data/repositories/application_repository.dart';
+import '../../data/repositories/app_option_repository.dart';
+import '../../data/repositories/app_settings_repository.dart';
 import '../../data/repositories/import_log_repository.dart';
 import '../../data/repositories/stage_repository.dart';
 import '../../features/import_export/services/import_parser.dart';
@@ -21,31 +25,51 @@ class AppController extends ChangeNotifier {
     ApplicationRepository? applicationRepository,
     StageRepository? stageRepository,
     ImportLogRepository? importLogRepository,
+    AppOptionRepository? appOptionRepository,
+    AppSettingsRepository? appSettingsRepository,
     ImportParser? importParser,
     ExportService? exportService,
   }) : applicationRepository = applicationRepository ?? ApplicationRepository(),
        stageRepository = stageRepository ?? StageRepository(),
        importLogRepository = importLogRepository ?? ImportLogRepository(),
+       appOptionRepository = appOptionRepository ?? AppOptionRepository(),
+       appSettingsRepository = appSettingsRepository ?? AppSettingsRepository(),
        importParser = importParser ?? ImportParser(),
        exportService = exportService ?? ExportService();
 
   final ApplicationRepository applicationRepository;
   final StageRepository stageRepository;
   final ImportLogRepository importLogRepository;
+  final AppOptionRepository appOptionRepository;
+  final AppSettingsRepository appSettingsRepository;
   final ImportParser importParser;
   final ExportService exportService;
 
   var applications = <ApplicationRecord>[];
   var stages = <StageRecord>[];
+  var customStatuses = <String, String>{};
+  var customDirections = <String, String>{};
+  String language = 'zh';
   ImportPreview? currentPreview;
   String message = '';
   bool isBusy = false;
 
-  Future<void> init() => reload();
+  Future<void> init() async {
+    language = await appSettingsRepository.get('language', fallback: 'zh');
+    await reload();
+  }
 
   Future<void> reload() async {
     isBusy = true;
     notifyListeners();
+    customStatuses = {
+      for (final option in await appOptionRepository.list('status'))
+        option.value: option.label,
+    };
+    customDirections = {
+      for (final option in await appOptionRepository.list('direction'))
+        option.value: option.label,
+    };
     applications = await applicationRepository.list();
     stages = await stageRepository.listAll();
     isBusy = false;
@@ -69,6 +93,45 @@ class AppController extends ChangeNotifier {
     message = '已删除投递记录';
     await reload();
   }
+
+  Future<void> deleteApplications(Iterable<String> ids) async {
+    for (final id in ids) {
+      await applicationRepository.delete(id);
+    }
+    message = '已删除 ${ids.length} 条投递记录';
+    await reload();
+  }
+
+  Future<String> addCustomStatus(String label) async {
+    final value = 'custom_status_${DateTime.now().millisecondsSinceEpoch}';
+    await appOptionRepository.add(
+      AppOption(type: 'status', value: value, label: label.trim()),
+    );
+    await reload();
+    return value;
+  }
+
+  Future<String> addCustomDirection(String label) async {
+    final value = 'custom_direction_${DateTime.now().millisecondsSinceEpoch}';
+    await appOptionRepository.add(
+      AppOption(type: 'direction', value: value, label: label.trim()),
+    );
+    await reload();
+    return value;
+  }
+
+  Future<void> setLanguage(String value) async {
+    language = value;
+    await appSettingsRepository.set('language', value);
+    notifyListeners();
+  }
+
+  Map<String, String> statusOptions() => {...statusLabels, ...customStatuses};
+
+  Map<String, String> directionOptions() => {
+    ...directionLabels,
+    ...customDirections,
+  };
 
   Future<void> saveStage(StageRecord stage) async {
     await stageRepository.upsert(stage);
@@ -138,6 +201,28 @@ class AppController extends ChangeNotifier {
     currentPreview = null;
     message = '已导入 ${records.length} 条记录';
     await reload();
+  }
+
+  void updatePreviewRecord(int index, ApplicationRecord record) {
+    final preview = currentPreview;
+    if (preview == null || index < 0 || index >= preview.rows.length) {
+      return;
+    }
+    final status = record.hasRequiredFields
+        ? ImportRowStatus.importable
+        : ImportRowStatus.missingRequired;
+    final rows = [...preview.rows];
+    rows[index] = ImportPreviewRow(
+      record: record,
+      status: status,
+      message: status.label,
+    );
+    currentPreview = ImportPreview(
+      fileName: preview.fileName,
+      mapping: preview.mapping,
+      rows: rows,
+    );
+    notifyListeners();
   }
 
   Future<File> exportCsv() => exportService.exportCsv(applications);

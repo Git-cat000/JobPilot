@@ -54,11 +54,19 @@ class ApplicationDetailPage extends StatelessWidget {
                   runSpacing: 8,
                   children: [
                     StatusPill(
-                      label: statusLabel(record.status),
+                      label: statusLabel(
+                        record.status,
+                        language: controller.language,
+                        custom: controller.customStatuses,
+                      ),
                       color: AppTheme.primary,
                     ),
                     StatusPill(
-                      label: directionLabel(record.jobDirection),
+                      label: directionLabel(
+                        record.jobDirection,
+                        language: controller.language,
+                        custom: controller.customDirections,
+                      ),
                       color: AppTheme.success,
                     ),
                     StatusPill(

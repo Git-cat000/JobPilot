@@ -17,6 +17,11 @@ class ClassificationService {
     'rejected': ['拒', '挂', '不合适', '感谢关注', '未通过'],
     'applied': ['已投', '投递完成', '等待反馈', '简历筛选'],
     'abandoned': ['放弃', '不投', '取消', '终止'],
+    'resume_screen': ['简历筛选', '筛选中', '初筛', '简历评估'],
+    'final_interview': ['终面', '最终面', '总监面', '合伙人面'],
+    'offer_negotiation': ['谈 offer', '谈Offer', '谈薪中', '薪资沟通'],
+    'signed': ['已签约', '签约', '接受 offer', '入职确认'],
+    'paused': ['暂停', '暂缓', '冻结', 'hc 暂停', 'HC 暂停'],
   };
 
   static const defaultDirectionRules = {
@@ -59,6 +64,13 @@ class ClassificationService {
       'Go',
       'Python',
     ],
+    'embedded': ['嵌入式', '单片机', 'MCU', 'ARM', 'RTOS', '驱动', '固件'],
+    'data_analysis': ['数据分析', 'BI', 'SQL', '数据运营', '指标', '报表'],
+    'product': ['产品', '产品经理', '需求', '原型', 'PRD'],
+    'operations': ['运营', '用户运营', '内容运营', '增长', '活动'],
+    'finance': ['金融', '投研', '风控', '券商', '基金', '行业研究'],
+    'consulting': ['咨询', '战略', '管理咨询', '商业分析'],
+    'research': ['科研', '研究助理', '实验室', '论文', '课题'],
   };
 
   String detectStatus(String text) {

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../data/models/application_record.dart';
 import '../../shared/state/app_controller.dart';
 import '../../shared/widgets/app_card.dart';
 import 'services/import_parser.dart';
@@ -53,18 +54,37 @@ class ImportPreviewPage extends StatelessWidget {
           const SizedBox(height: 16),
           const SectionTitle('记录状态'),
           const SizedBox(height: 10),
-          ...preview.rows.map(
-            (row) => Padding(
+          ...preview.rows.asMap().entries.map(
+            (entry) => Padding(
               padding: const EdgeInsets.only(bottom: 10),
               child: AppCard(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('${row.record.companyName} · ${row.record.jobTitle}'),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            '${entry.value.record.companyName} · '
+                            '${entry.value.record.jobTitle}',
+                          ),
+                        ),
+                        IconButton(
+                          tooltip: '编辑',
+                          onPressed: () => _editRow(
+                            context,
+                            controller,
+                            entry.key,
+                            entry.value.record,
+                          ),
+                          icon: const Icon(Icons.edit_outlined),
+                        ),
+                      ],
+                    ),
                     const SizedBox(height: 8),
                     StatusPill(
-                      label: row.status.label,
-                      color: _statusColor(row.status),
+                      label: entry.value.status.label,
+                      color: _statusColor(entry.value.status),
                     ),
                   ],
                 ),
@@ -128,6 +148,128 @@ class ImportPreviewPage extends StatelessWidget {
       ImportRowStatus.missingRequired => AppTheme.danger,
       ImportRowStatus.invalidField => AppTheme.danger,
     };
+  }
+
+  Future<void> _editRow(
+    BuildContext context,
+    AppController controller,
+    int index,
+    ApplicationRecord record,
+  ) async {
+    final company = TextEditingController(text: record.companyName);
+    final title = TextEditingController(text: record.jobTitle);
+    final city = TextEditingController(text: record.city);
+    final channel = TextEditingController(text: record.channel);
+    final applyDate = TextEditingController(text: record.applyDate);
+    final remark = TextEditingController(text: record.remark);
+    var status = record.status;
+    var direction = record.jobDirection;
+    final updated = await showDialog<ApplicationRecord>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('编辑导入记录'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: company,
+                  decoration: const InputDecoration(labelText: '公司名称 *'),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: title,
+                  decoration: const InputDecoration(labelText: '岗位名称 *'),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: city,
+                  decoration: const InputDecoration(labelText: '城市'),
+                ),
+                const SizedBox(height: 10),
+                DropdownButtonFormField<String>(
+                  initialValue: status,
+                  decoration: const InputDecoration(labelText: '状态'),
+                  items: controller
+                      .statusOptions()
+                      .entries
+                      .map(
+                        (entry) => DropdownMenuItem(
+                          value: entry.key,
+                          child: Text(entry.value),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (value) =>
+                      setState(() => status = value ?? status),
+                ),
+                const SizedBox(height: 10),
+                DropdownButtonFormField<String>(
+                  initialValue: direction,
+                  decoration: const InputDecoration(labelText: '方向'),
+                  items: controller
+                      .directionOptions()
+                      .entries
+                      .map(
+                        (entry) => DropdownMenuItem(
+                          value: entry.key,
+                          child: Text(entry.value),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (value) =>
+                      setState(() => direction = value ?? direction),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: applyDate,
+                  decoration: const InputDecoration(labelText: '投递日期'),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: channel,
+                  decoration: const InputDecoration(labelText: '渠道'),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: remark,
+                  decoration: const InputDecoration(labelText: '备注'),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('取消'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(
+                context,
+                record.copyWith(
+                  companyName: company.text,
+                  jobTitle: title.text,
+                  city: city.text,
+                  channel: channel.text,
+                  applyDate: applyDate.text,
+                  remark: remark.text,
+                  status: status,
+                  jobDirection: direction,
+                ),
+              ),
+              child: const Text('保存'),
+            ),
+          ],
+        ),
+      ),
+    );
+    for (final item in [company, title, city, channel, applyDate, remark]) {
+      item.dispose();
+    }
+    if (updated != null) {
+      controller.updatePreviewRecord(index, updated);
+    }
   }
 }
 

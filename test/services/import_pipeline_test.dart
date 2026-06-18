@@ -49,4 +49,26 @@ void main() {
       expect(preview.rows[1].status, ImportRowStatus.missingRequired);
     },
   );
+
+  test(
+    'normalizes decorated headers and uses explicit direction columns',
+    () async {
+      const csvText = '''
+ 公司名称 ,岗位名称（必填）,工作城市,当前状态,申请日期,投递平台,岗位方向
+荣耀,客户端开发工程师,深圳,HR面,2026-06-18,官网,互联网开发
+''';
+
+      final preview = await ImportParser().parseCsvText(csvText, existing: []);
+
+      expect(preview.mapping.values, contains('company_name'));
+      expect(preview.mapping.values, contains('job_title'));
+      expect(preview.mapping.values, contains('status'));
+      expect(preview.mapping.values, contains('channel'));
+      expect(preview.rows.single.record.companyName, '荣耀');
+      expect(preview.rows.single.record.jobTitle, '客户端开发工程师');
+      expect(preview.rows.single.record.city, '深圳');
+      expect(preview.rows.single.record.status, 'hr_interview');
+      expect(preview.rows.single.record.jobDirection, 'internet_dev');
+    },
+  );
 }

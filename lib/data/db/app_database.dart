@@ -22,7 +22,7 @@ class AppDatabase {
   Future<Database> _open() async {
     return openDatabase(
       await databasePath,
-      version: 1,
+      version: 2,
       onConfigure: (db) => db.execute('PRAGMA foreign_keys = ON'),
       onCreate: (db, version) async {
         await db.execute('''
@@ -86,8 +86,32 @@ CREATE TABLE import_logs (
   created_at TEXT NOT NULL
 )
 ''');
+        await _createOptionTables(db);
+      },
+      onUpgrade: (db, oldVersion, newVersion) async {
+        if (oldVersion < 2) {
+          await _createOptionTables(db);
+        }
       },
     );
+  }
+
+  Future<void> _createOptionTables(Database db) async {
+    await db.execute('''
+CREATE TABLE IF NOT EXISTS app_options (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  type TEXT NOT NULL,
+  value TEXT NOT NULL,
+  label TEXT NOT NULL,
+  UNIQUE(type, value)
+)
+''');
+    await db.execute('''
+CREATE TABLE IF NOT EXISTS app_settings (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL
+)
+''');
   }
 
   Future<void> close() async {

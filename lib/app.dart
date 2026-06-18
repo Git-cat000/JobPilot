@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'core/app_strings.dart';
 import 'core/theme/app_theme.dart';
 import 'features/applications/application_detail_page.dart';
 import 'features/applications/application_edit_page.dart';
@@ -70,6 +71,8 @@ class _JobPilotShellState extends State<JobPilotShell> {
 
   @override
   Widget build(BuildContext context) {
+    final controller = AppScope.watch(context);
+    final strings = AppStrings(controller.language);
     return Scaffold(
       body: SafeArea(child: _pages[_currentIndex]),
       bottomNavigationBar: NavigationBar(
@@ -77,31 +80,31 @@ class _JobPilotShellState extends State<JobPilotShell> {
         onDestinationSelected: (index) {
           setState(() => _currentIndex = index);
         },
-        destinations: const [
+        destinations: [
           NavigationDestination(
-            icon: Icon(Icons.space_dashboard_outlined),
-            selectedIcon: Icon(Icons.space_dashboard),
-            label: '首页',
+            icon: const Icon(Icons.space_dashboard_outlined),
+            selectedIcon: const Icon(Icons.space_dashboard),
+            label: strings.home,
           ),
           NavigationDestination(
-            icon: Icon(Icons.work_outline),
-            selectedIcon: Icon(Icons.work),
-            label: '投递',
+            icon: const Icon(Icons.work_outline),
+            selectedIcon: const Icon(Icons.work),
+            label: strings.applications,
           ),
           NavigationDestination(
-            icon: Icon(Icons.upload_file_outlined),
-            selectedIcon: Icon(Icons.upload_file),
-            label: '导入',
+            icon: const Icon(Icons.upload_file_outlined),
+            selectedIcon: const Icon(Icons.upload_file),
+            label: strings.import,
           ),
           NavigationDestination(
-            icon: Icon(Icons.query_stats_outlined),
-            selectedIcon: Icon(Icons.query_stats),
-            label: '统计',
+            icon: const Icon(Icons.query_stats_outlined),
+            selectedIcon: const Icon(Icons.query_stats),
+            label: strings.statistics,
           ),
           NavigationDestination(
-            icon: Icon(Icons.settings_outlined),
-            selectedIcon: Icon(Icons.settings),
-            label: '设置',
+            icon: const Icon(Icons.settings_outlined),
+            selectedIcon: const Icon(Icons.settings),
+            label: strings.settings,
           ),
         ],
       ),

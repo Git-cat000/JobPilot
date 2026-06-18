@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/app_strings.dart';
 import '../../core/enums/job_enums.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/models/application_record.dart';
@@ -19,10 +20,13 @@ class _ApplicationsPageState extends State<ApplicationsPage> {
   String query = '';
   String status = 'all';
   String direction = 'all';
+  bool selecting = false;
+  final selectedIds = <String>{};
 
   @override
   Widget build(BuildContext context) {
     final controller = AppScope.watch(context);
+    final strings = AppStrings(controller.language);
     final records = controller.applications.where(_matches).toList();
 
     return ListView(
@@ -32,28 +36,56 @@ class _ApplicationsPageState extends State<ApplicationsPage> {
           children: [
             Expanded(
               child: Text(
-                '投递记录',
+                strings.jobRecords,
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.w900,
                 ),
               ),
             ),
-            FilledButton.icon(
-              onPressed: () async {
-                await Navigator.of(
-                  context,
-                ).pushNamed(ApplicationEditPage.routeName);
+            TextButton.icon(
+              onPressed: () {
+                setState(() {
+                  selecting = !selecting;
+                  selectedIds.clear();
+                });
               },
-              icon: const Icon(Icons.add),
-              label: const Text('新增'),
+              icon: Icon(selecting ? Icons.close : Icons.checklist_outlined),
+              label: Text(selecting ? strings.done : strings.select),
             ),
+            if (!selecting)
+              FilledButton.icon(
+                onPressed: () async {
+                  await Navigator.of(
+                    context,
+                  ).pushNamed(ApplicationEditPage.routeName);
+                },
+                icon: const Icon(Icons.add),
+                label: Text(strings.add),
+              ),
           ],
         ),
+        if (selecting) ...[
+          const SizedBox(height: 10),
+          AppCard(
+            child: Row(
+              children: [
+                Expanded(child: Text('已选择 ${selectedIds.length} 项')),
+                FilledButton.icon(
+                  onPressed: selectedIds.isEmpty
+                      ? null
+                      : () => _confirmBulkDelete(context, controller),
+                  icon: const Icon(Icons.delete_outline),
+                  label: const Text('删除'),
+                ),
+              ],
+            ),
+          ),
+        ],
         const SizedBox(height: 16),
         TextField(
-          decoration: const InputDecoration(
-            hintText: '搜索公司、岗位或城市',
-            prefixIcon: Icon(Icons.search),
+          decoration: InputDecoration(
+            hintText: strings.searchHint,
+            prefixIcon: const Icon(Icons.search),
           ),
           onChanged: (value) => setState(() => query = value),
         ),
@@ -66,10 +98,16 @@ class _ApplicationsPageState extends State<ApplicationsPage> {
               initialSelection: status,
               onSelected: (value) => setState(() => status = value ?? 'all'),
               dropdownMenuEntries: [
-                const DropdownMenuEntry(value: 'all', label: '全部状态'),
-                ...statusLabels.entries.map(
-                  (entry) =>
-                      DropdownMenuEntry(value: entry.key, label: entry.value),
+                DropdownMenuEntry(value: 'all', label: strings.allStatus),
+                ...controller.statusOptions().entries.map(
+                  (entry) => DropdownMenuEntry(
+                    value: entry.key,
+                    label: statusLabel(
+                      entry.key,
+                      language: controller.language,
+                      custom: controller.customStatuses,
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -77,10 +115,16 @@ class _ApplicationsPageState extends State<ApplicationsPage> {
               initialSelection: direction,
               onSelected: (value) => setState(() => direction = value ?? 'all'),
               dropdownMenuEntries: [
-                const DropdownMenuEntry(value: 'all', label: '全部方向'),
-                ...directionLabels.entries.map(
-                  (entry) =>
-                      DropdownMenuEntry(value: entry.key, label: entry.value),
+                DropdownMenuEntry(value: 'all', label: strings.allDirection),
+                ...controller.directionOptions().entries.map(
+                  (entry) => DropdownMenuEntry(
+                    value: entry.key,
+                    label: directionLabel(
+                      entry.key,
+                      language: controller.language,
+                      custom: controller.customDirections,
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -88,12 +132,12 @@ class _ApplicationsPageState extends State<ApplicationsPage> {
         ),
         const SizedBox(height: 16),
         if (records.isEmpty)
-          const AppCard(
+          AppCard(
             child: Row(
               children: [
-                Icon(Icons.inbox_outlined, color: AppTheme.secondaryText),
-                SizedBox(width: 12),
-                Expanded(child: Text('暂无匹配记录。可以新增投递，或从导入页导入表格。')),
+                const Icon(Icons.inbox_outlined, color: AppTheme.secondaryText),
+                const SizedBox(width: 12),
+                Expanded(child: Text(strings.noMatch)),
               ],
             ),
           )
@@ -101,7 +145,18 @@ class _ApplicationsPageState extends State<ApplicationsPage> {
           ...records.map(
             (record) => Padding(
               padding: const EdgeInsets.only(bottom: 12),
-              child: _ApplicationCard(record: record),
+              child: _ApplicationCard(
+                record: record,
+                selecting: selecting,
+                selected: selectedIds.contains(record.id),
+                onSelected: () {
+                  setState(() {
+                    selectedIds.contains(record.id)
+                        ? selectedIds.remove(record.id)
+                        : selectedIds.add(record.id);
+                  });
+                },
+              ),
             ),
           ),
       ],
@@ -120,77 +175,187 @@ class _ApplicationsPageState extends State<ApplicationsPage> {
     final directionOk = direction == 'all' || record.jobDirection == direction;
     return queryOk && statusOk && directionOk;
   }
+
+  Future<void> _confirmBulkDelete(
+    BuildContext context,
+    AppController controller,
+  ) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('批量删除？'),
+        content: Text('将删除 ${selectedIds.length} 条投递记录及其流程记录。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('删除'),
+          ),
+        ],
+      ),
+    );
+    if (ok == true) {
+      await controller.deleteApplications(selectedIds);
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        selecting = false;
+        selectedIds.clear();
+      });
+    }
+  }
 }
 
 class _ApplicationCard extends StatelessWidget {
-  const _ApplicationCard({required this.record});
+  const _ApplicationCard({
+    required this.record,
+    required this.selecting,
+    required this.selected,
+    required this.onSelected,
+  });
 
   final ApplicationRecord record;
+  final bool selecting;
+  final bool selected;
+  final VoidCallback onSelected;
 
   @override
   Widget build(BuildContext context) {
+    final controller = AppScope.watch(context);
     return AppCard(
       child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: () {
-          Navigator.of(
-            context,
-          ).pushNamed(ApplicationDetailPage.routeName, arguments: record.id);
-        },
+        borderRadius: BorderRadius.circular(22),
+        onTap: selecting
+            ? onSelected
+            : () {
+                Navigator.of(context).pushNamed(
+                  ApplicationDetailPage.routeName,
+                  arguments: record.id,
+                );
+              },
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 2),
-          child: Column(
+          child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      record.companyName,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
+              if (selecting)
+                Padding(
+                  padding: const EdgeInsets.only(right: 10, top: 2),
+                  child: Checkbox(
+                    value: selected,
+                    onChanged: (_) => onSelected(),
                   ),
-                  StatusPill(
-                    label: statusLabel(record.status),
-                    color: AppTheme.primary,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 6),
-              Text(record.jobTitle),
-              const SizedBox(height: 10),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  StatusPill(
-                    label: directionLabel(record.jobDirection),
-                    color: AppTheme.success,
-                  ),
-                  if (record.city.isNotEmpty)
-                    StatusPill(
-                      label: record.city,
-                      color: AppTheme.secondaryText,
+                ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            record.companyName,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        ),
+                        StatusPill(
+                          label: statusLabel(
+                            record.status,
+                            language: controller.language,
+                            custom: controller.customStatuses,
+                          ),
+                          color: _statusColor(record.status),
+                        ),
+                      ],
                     ),
-                  if (record.channel.isNotEmpty)
-                    StatusPill(
-                      label: record.channel,
-                      color: AppTheme.secondaryText,
+                    const SizedBox(height: 6),
+                    Text(record.jobTitle),
+                    const SizedBox(height: 10),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        StatusPill(
+                          label: directionLabel(
+                            record.jobDirection,
+                            language: controller.language,
+                            custom: controller.customDirections,
+                          ),
+                          color: AppTheme.success,
+                        ),
+                        StatusPill(
+                          label: 'P${record.priority}',
+                          color: _priorityColor(record.priority),
+                        ),
+                        if (record.city.isNotEmpty)
+                          StatusPill(
+                            label: record.city,
+                            color: const Color(0xFF0EA5E9),
+                          ),
+                        if (record.channel.isNotEmpty)
+                          StatusPill(
+                            label: record.channel,
+                            color: const Color(0xFF8B5CF6),
+                          ),
+                      ],
                     ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              Text(
-                '投递日期 ${record.applyDate.isEmpty ? '未填写' : record.applyDate} · 下次跟进 ${record.nextFollowDate.isEmpty ? '待定' : record.nextFollowDate}',
-                style: const TextStyle(color: AppTheme.secondaryText),
+                    const SizedBox(height: 10),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        StatusPill(
+                          label: record.applyDate.isEmpty
+                              ? '投递日期未填'
+                              : record.applyDate,
+                          color: AppTheme.secondaryText,
+                        ),
+                        StatusPill(
+                          label: record.nextFollowDate.isEmpty
+                              ? '待跟进'
+                              : '跟进 ${record.nextFollowDate}',
+                          color: record.nextFollowDate.isEmpty
+                              ? AppTheme.warning
+                              : AppTheme.primary,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  Color _statusColor(String status) {
+    return switch (status) {
+      'offer' || 'signed' => AppTheme.success,
+      'rejected' || 'abandoned' => AppTheme.danger,
+      'written_test' ||
+      'first_interview' ||
+      'second_interview' ||
+      'final_interview' ||
+      'hr_interview' => AppTheme.warning,
+      _ => AppTheme.primary,
+    };
+  }
+
+  Color _priorityColor(String priority) {
+    return switch (priority) {
+      'S' => AppTheme.danger,
+      'A' => AppTheme.warning,
+      'B' => AppTheme.primary,
+      _ => AppTheme.secondaryText,
+    };
   }
 }

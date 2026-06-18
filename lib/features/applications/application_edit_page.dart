@@ -84,6 +84,7 @@ class _ApplicationEditPageState extends State<ApplicationEditPage> {
 
   @override
   Widget build(BuildContext context) {
+    final controller = AppScope.watch(context);
     return Scaffold(
       appBar: AppBar(title: Text(original == null ? '新增投递' : '编辑投递')),
       body: ListView(
@@ -110,16 +111,40 @@ class _ApplicationEditPageState extends State<ApplicationEditPage> {
               DropdownButtonFormField<String>(
                 initialValue: direction,
                 decoration: const InputDecoration(labelText: '岗位方向'),
-                items: directionLabels.entries
+                items: controller
+                    .directionOptions()
+                    .entries
                     .map(
                       (entry) => DropdownMenuItem(
                         value: entry.key,
-                        child: Text(entry.value),
+                        child: Text(
+                          directionLabel(
+                            entry.key,
+                            language: controller.language,
+                            custom: controller.customDirections,
+                          ),
+                        ),
                       ),
                     )
                     .toList(),
                 onChanged: (value) =>
                     setState(() => direction = value ?? 'other'),
+              ),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  onPressed: () async {
+                    final value = await _addCustomOption(
+                      context,
+                      isStatus: false,
+                    );
+                    if (value != null) {
+                      setState(() => direction = value);
+                    }
+                  },
+                  icon: const Icon(Icons.add_circle_outline),
+                  label: const Text('添加自定义方向'),
+                ),
               ),
             ],
           ),
@@ -130,16 +155,40 @@ class _ApplicationEditPageState extends State<ApplicationEditPage> {
               DropdownButtonFormField<String>(
                 initialValue: status,
                 decoration: const InputDecoration(labelText: '当前状态'),
-                items: statusLabels.entries
+                items: controller
+                    .statusOptions()
+                    .entries
                     .map(
                       (entry) => DropdownMenuItem(
                         value: entry.key,
-                        child: Text(entry.value),
+                        child: Text(
+                          statusLabel(
+                            entry.key,
+                            language: controller.language,
+                            custom: controller.customStatuses,
+                          ),
+                        ),
                       ),
                     )
                     .toList(),
                 onChanged: (value) =>
                     setState(() => status = value ?? 'applied'),
+              ),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  onPressed: () async {
+                    final value = await _addCustomOption(
+                      context,
+                      isStatus: true,
+                    );
+                    if (value != null) {
+                      setState(() => status = value);
+                    }
+                  },
+                  icon: const Icon(Icons.add_circle_outline),
+                  label: const Text('添加自定义状态'),
+                ),
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
@@ -256,6 +305,42 @@ class _ApplicationEditPageState extends State<ApplicationEditPage> {
     if (mounted) {
       Navigator.of(context).pop();
     }
+  }
+
+  Future<String?> _addCustomOption(
+    BuildContext context, {
+    required bool isStatus,
+  }) async {
+    final controller = AppScope.watch(context);
+    final text = TextEditingController();
+    final label = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(isStatus ? '添加自定义状态' : '添加自定义方向'),
+        content: TextField(
+          controller: text,
+          autofocus: true,
+          decoration: const InputDecoration(labelText: '名称'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, text.text.trim()),
+            child: const Text('添加'),
+          ),
+        ],
+      ),
+    );
+    text.dispose();
+    if (label == null || label.isEmpty) {
+      return null;
+    }
+    return isStatus
+        ? controller.addCustomStatus(label)
+        : controller.addCustomDirection(label);
   }
 }
 

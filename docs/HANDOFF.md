@@ -1,5 +1,53 @@
 # HANDOFF.md
 
+## 2026-06-18 20:00 — Codex
+
+### 本次完成
+
+- 按用户反馈优化 UI 为更轻的 iOS 扁平化观感：更柔和的卡片、标签、输入框和导航样式。
+- 首页最近投递支持点击直达对应投递详情。
+- 投递列表增加多选模式，可批量删除；岗位卡片增加状态、方向、优先级、城市、渠道、日期等彩色信息标签。
+- 扩展岗位方向和求职状态选项，并支持在新增/编辑页自定义添加。
+- 修复导入识别不全：支持装饰表头、更多表头别名、XLSX 文本单元格读取、显式岗位方向列和下次跟进日期。
+- 导入预览页增加单行编辑功能，确认导入前可修正识别错误。
+- 设置页增加中文/英文切换，并持久保存语言设置。
+- 重新构建 debug APK 到 `dist/jobpilot-v1-debug.apk`。
+
+### 修改文件
+
+- `lib/core/...`
+- `lib/data/db/app_database.dart`
+- `lib/data/models/app_option.dart`
+- `lib/data/repositories/app_option_repository.dart`
+- `lib/data/repositories/app_settings_repository.dart`
+- `lib/features/applications/...`
+- `lib/features/dashboard/dashboard_page.dart`
+- `lib/features/import_export/...`
+- `lib/features/settings/settings_page.dart`
+- `lib/shared/state/app_controller.dart`
+- `assets/rules/...`
+- `test/services/import_pipeline_test.dart`
+
+### 当前状态
+
+- `flutter test test\services\import_pipeline_test.dart --reporter compact`：通过
+- `flutter test --reporter compact`：通过
+- `flutter analyze`：通过
+- `flutter build apk --debug`：通过
+- APK：`dist/jobpilot-v1-debug.apk`
+- APK SHA-256：`6C7A1C439D8865A45215B24D3C244B3047D977ECD5E7AE270195DD6D55AA5152`
+
+### 已知问题
+
+- 当前仍是 debug APK；release APK 仍依赖 Flutter release artifacts 网络可用性。
+- 中英文切换已覆盖主导航、设置页和部分列表文案，深层表单和导入页面仍以中文为主，后续可继续完整本地化。
+- 未在 Android 真机上手工安装验证。
+
+### 下一步建议
+
+- 在真机上验证文件选择、导入预览编辑、批量删除和自定义选项持久化。
+- 继续补齐所有页面的英文文案。
+
 ## 2026-06-18 18:46 — Codex
 
 ### 本次完成

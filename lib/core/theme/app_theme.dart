@@ -23,13 +23,13 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       colorScheme: colorScheme,
-      scaffoldBackgroundColor: background,
+      scaffoldBackgroundColor: const Color(0xFFF7F8FA),
       fontFamilyFallback: const ['Microsoft YaHei', 'PingFang SC'],
       appBarTheme: const AppBarTheme(
         centerTitle: false,
         elevation: 0,
         scrolledUnderElevation: 0,
-        backgroundColor: background,
+        backgroundColor: Color(0xFFF7F8FA),
         foregroundColor: text,
       ),
       cardTheme: CardThemeData(
@@ -37,28 +37,28 @@ class AppTheme {
         color: Colors.white,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: const BorderSide(color: border),
+          borderRadius: BorderRadius.circular(22),
+          side: BorderSide(color: border.withValues(alpha: 0.75)),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: Colors.white,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: border),
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: border.withValues(alpha: 0.8)),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: border),
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: border.withValues(alpha: 0.8)),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(14),
           borderSide: const BorderSide(color: primary, width: 1.4),
         ),
       ),
       navigationBarTheme: NavigationBarThemeData(
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.white.withValues(alpha: 0.96),
         indicatorColor: primary.withValues(alpha: 0.10),
         labelTextStyle: WidgetStateProperty.all(
           const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
@@ -67,7 +67,7 @@ class AppTheme {
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(14),
           ),
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
         ),
