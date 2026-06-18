@@ -364,11 +364,21 @@ class _OptionPickerSheetState extends State<_OptionPickerSheet> {
             Row(
               children: [
                 Expanded(
-                  child: Text(
-                    widget.title,
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w900,
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.title,
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      const Text(
+                        '轻点选择，自定义项可左滑删除',
+                        style: TextStyle(color: AppTheme.secondaryText),
+                      ),
+                    ],
                   ),
                 ),
                 IconButton(
@@ -378,98 +388,156 @@ class _OptionPickerSheetState extends State<_OptionPickerSheet> {
                 ),
               ],
             ),
-            const SizedBox(height: 8),
-            Flexible(
-              child: ListView.separated(
-                shrinkWrap: true,
-                itemCount: options.length,
-                separatorBuilder: (context, index) => const Divider(height: 1),
-                itemBuilder: (context, index) {
-                  final entry = options.entries.elementAt(index);
-                  final isCustom = customOptions.containsKey(entry.key);
-                  final label = widget.isStatus
-                      ? statusLabel(
-                          entry.key,
-                          language: widget.controller.language,
-                          custom: widget.controller.customStatuses,
-                        )
-                      : directionLabel(
-                          entry.key,
-                          language: widget.controller.language,
-                          custom: widget.controller.customDirections,
-                        );
-                  final tile = ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: Text(label),
-                    subtitle: isCustom ? const Text('自定义选项') : null,
-                    trailing: entry.key == widget.currentValue
-                        ? const Icon(
-                            Icons.check_circle,
-                            color: AppTheme.primary,
-                          )
-                        : null,
-                    onTap: () => Navigator.pop(context, entry.key),
-                  );
-                  if (!isCustom) {
-                    return tile;
-                  }
-                  return Dismissible(
-                    key: ValueKey('${widget.isStatus}-${entry.key}'),
-                    direction: DismissDirection.endToStart,
-                    background: Container(
-                      alignment: Alignment.centerRight,
-                      padding: const EdgeInsets.symmetric(horizontal: 18),
-                      decoration: BoxDecoration(
-                        color: AppTheme.danger.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(
-                        Icons.delete_outline,
-                        color: AppTheme.danger,
-                      ),
-                    ),
-                    confirmDismiss: (_) async {
-                      if (widget.isStatus) {
-                        await widget.controller.deleteCustomStatus(entry.key);
-                      } else {
-                        await widget.controller.deleteCustomDirection(
-                          entry.key,
-                        );
-                      }
-                      if (!mounted || !context.mounted) {
-                        return false;
-                      }
-                      if (entry.key == widget.currentValue) {
-                        Navigator.pop(
-                          context,
-                          widget.isStatus ? 'applied' : 'other',
-                        );
-                        return false;
-                      }
-                      setState(() {});
-                      return true;
-                    },
-                    child: tile,
-                  );
-                },
-              ),
-            ),
             const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: text,
-                    decoration: InputDecoration(
-                      hintText: widget.isStatus ? '新增状态' : '新增方向',
-                      prefixIcon: const Icon(Icons.add_circle_outline),
-                    ),
-                    onSubmitted: (_) => _addAndSelect(),
+            Flexible(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(
+                    color: AppTheme.border.withValues(alpha: 0.75),
                   ),
                 ),
-                const SizedBox(width: 10),
-                FilledButton(onPressed: _addAndSelect, child: const Text('添加')),
-              ],
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 6,
+                  ),
+                  itemCount: options.length,
+                  separatorBuilder: (context, index) => Divider(
+                    height: 1,
+                    indent: 52,
+                    color: AppTheme.border.withValues(alpha: 0.7),
+                  ),
+                  itemBuilder: (context, index) {
+                    final entry = options.entries.elementAt(index);
+                    final isCustom = customOptions.containsKey(entry.key);
+                    final label = widget.isStatus
+                        ? statusLabel(
+                            entry.key,
+                            language: widget.controller.language,
+                            custom: widget.controller.customStatuses,
+                          )
+                        : directionLabel(
+                            entry.key,
+                            language: widget.controller.language,
+                            custom: widget.controller.customDirections,
+                          );
+                    final tile = ListTile(
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 6),
+                      leading: _OptionIcon(isCustom: isCustom),
+                      title: Text(
+                        label,
+                        style: const TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                      subtitle: isCustom ? const Text('自定义选项') : null,
+                      trailing: entry.key == widget.currentValue
+                          ? const Icon(
+                              Icons.check_circle,
+                              color: AppTheme.primary,
+                            )
+                          : null,
+                      onTap: () => Navigator.pop(context, entry.key),
+                    );
+                    if (!isCustom) {
+                      return tile;
+                    }
+                    return Dismissible(
+                      key: ValueKey('${widget.isStatus}-${entry.key}'),
+                      direction: DismissDirection.endToStart,
+                      background: Container(
+                        alignment: Alignment.centerRight,
+                        padding: const EdgeInsets.symmetric(horizontal: 18),
+                        decoration: BoxDecoration(
+                          color: AppTheme.danger.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: const Icon(
+                          Icons.delete_outline,
+                          color: AppTheme.danger,
+                        ),
+                      ),
+                      confirmDismiss: (_) async {
+                        if (widget.isStatus) {
+                          await widget.controller.deleteCustomStatus(entry.key);
+                        } else {
+                          await widget.controller.deleteCustomDirection(
+                            entry.key,
+                          );
+                        }
+                        if (!mounted || !context.mounted) {
+                          return false;
+                        }
+                        if (entry.key == widget.currentValue) {
+                          Navigator.pop(
+                            context,
+                            widget.isStatus ? 'applied' : 'other',
+                          );
+                          return false;
+                        }
+                        setState(() {});
+                        return true;
+                      },
+                      child: tile,
+                    );
+                  },
+                ),
+              ),
+            ),
+            const SizedBox(height: 14),
+            DecoratedBox(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(
+                  color: AppTheme.border.withValues(alpha: 0.75),
+                ),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(14),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.add_circle_outline,
+                          color: AppTheme.primary,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          widget.isStatus ? '添加自定义状态' : '添加自定义方向',
+                          style: Theme.of(context).textTheme.titleSmall
+                              ?.copyWith(fontWeight: FontWeight.w900),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      '添加后会自动选中，可在上方列表左滑删除。',
+                      style: TextStyle(color: AppTheme.secondaryText),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: text,
+                      decoration: InputDecoration(
+                        hintText: widget.isStatus ? '例如：终面沟通' : '例如：嵌入式软件',
+                      ),
+                      onSubmitted: (_) => _addAndSelect(),
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton.icon(
+                        onPressed: _addAndSelect,
+                        icon: const Icon(Icons.add),
+                        label: const Text('添加并选中'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ],
         ),
@@ -488,6 +556,26 @@ class _OptionPickerSheetState extends State<_OptionPickerSheet> {
     if (mounted) {
       Navigator.pop(context, value);
     }
+  }
+}
+
+class _OptionIcon extends StatelessWidget {
+  const _OptionIcon({required this.isCustom});
+
+  final bool isCustom;
+
+  @override
+  Widget build(BuildContext context) {
+    return CircleAvatar(
+      radius: 18,
+      backgroundColor: (isCustom ? AppTheme.success : AppTheme.primary)
+          .withValues(alpha: 0.10),
+      child: Icon(
+        isCustom ? Icons.tune_outlined : Icons.label_outline,
+        size: 18,
+        color: isCustom ? AppTheme.success : AppTheme.primary,
+      ),
+    );
   }
 }
 

@@ -1,5 +1,39 @@
 # HANDOFF.md
 
+## 2026-06-18 21:02 — Codex
+
+### 本次完成
+
+- 再次优化填写岗位信息时的自定义状态 / 方向添加界面。
+- 自定义添加区改为独立白色圆角面板，增加说明文案、示例占位和全宽“添加并选中”按钮。
+- 选项列表改为同风格圆角容器，内置 / 自定义选项增加克制图标区分，整体更贴合 App 现有简约卡片式 UI。
+- 应用版本更新为 `1.1.0+2`，准备发布 `v1.1.0`。
+- README 更新为公开项目描述、v1.1 APK 路径和 SHA-256。
+
+### 修改文件
+
+- `lib/features/applications/application_edit_page.dart`
+- `pubspec.yaml`
+- `README.md`
+- `docs/HANDOFF.md`
+
+### 当前状态
+
+- `flutter pub get`：通过
+- `flutter analyze`：通过
+- `flutter test --reporter compact`：通过
+- `flutter build apk --debug`：通过
+- APK：`dist/jobcopilot-v1.1-debug.apk`
+- APK SHA-256：`8F666AE37EEE6DDBAB66863F5EACE2C699A1825EB78400075E948E8AD3FAE206`
+
+### 已知问题
+
+- 当前 v1.1 仍发布 debug APK；release APK 仍待 release artifacts 网络可用后构建。
+
+### 下一步建议
+
+- 发布 GitHub `v1.1.0` Release 后，在真机上验证自定义添加区和安装显示名。
+
 ## 2026-06-18 20:36 — Codex
 
 ### 本次完成
