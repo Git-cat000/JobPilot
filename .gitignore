@@ -47,3 +47,13 @@ app.*.map.json
 
 # Local packaged APKs are uploaded as GitHub Release assets, not committed.
 /dist/*.apk
+/dist/*.aab
+/dist/*.zip
+/dist/*.jobpack
+
+# Local-only exports, screenshots, and scratch files.
+/exports/
+/screenshots/
+/captures/
+/tmp/
+/temp/

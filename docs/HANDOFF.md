@@ -1,5 +1,33 @@
 # HANDOFF.md
 
+## 2026-06-18 20:10 — Codex
+
+### 本次完成
+
+- 将 Flutter 模板 README 替换为 JobPilot 项目说明，覆盖功能、APK、开发命令、目录结构、数据隐私和已知限制。
+- 加固 `.gitignore`，继续排除 APK/AAB/ZIP/jobpack、本地导出、截图和临时目录。
+- 检查 Git 跟踪文件，当前入库内容为项目源码、Android 配置、规则、文档、测试数据和项目记忆；构建缓存、IDE 文件、本机配置和 APK 均未入库。
+
+### 修改文件
+
+- `README.md`
+- `.gitignore`
+- `docs/HANDOFF.md`
+- `.ai/task-log.md`
+
+### 当前状态
+
+- `git status --short --branch`：已检查
+- 测试：本次只改文档和忽略规则，未重新运行 Flutter 测试
+
+### 已知问题
+
+- 暂无新增问题。
+
+### 下一步建议
+
+- 后续每次推送前先检查 README 是否仍反映当前 APK 和功能状态。
+
 ## 2026-06-18 20:00 — Codex
 
 ### 本次完成
