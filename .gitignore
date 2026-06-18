@@ -64,3 +64,8 @@ app.*.map.json
 /.ai/
 /.agents/
 /.codex/
+
+# AI tooling indices/configs are local, not project source.
+/.codegraph/
+/.cursor/
+/.claude/

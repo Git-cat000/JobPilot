@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/enums/job_enums.dart';
 import '../../core/theme/app_theme.dart';
 import '../../shared/state/app_controller.dart';
+import '../../shared/widgets/adaptive.dart';
 import '../../shared/widgets/app_card.dart';
 
 class StatisticsPage extends StatelessWidget {
@@ -14,12 +15,7 @@ class StatisticsPage extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        Text(
-          '统计',
-          style: Theme.of(
-            context,
-          ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w900),
-        ),
+        AdaptiveTabHeader(title: '统计'),
         const SizedBox(height: 16),
         AppCard(
           child: Column(

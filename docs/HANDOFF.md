@@ -1,5 +1,93 @@
 # HANDOFF.md
 
+## 2026-06-18 — Claude Code（iOS 化 / Cupertino 特化）
+
+### 本次完成
+
+- 在保持安卓端不变的前提下，对 iOS 端做 Cupertino 风格特化。新增 `lib/shared/widgets/adaptive.dart`，封装 `isIos`（`Platform.isIOS`）开关与一组自适应组件，所有 iOS 分支均以此为条件，安卓端（含测试宿主 Windows/macOS）始终走原 Material 路径。
+- iOS 端特化内容：
+  - 底部导航改用 `CupertinoTabBar`（主色高亮、毛白白底）。
+  - 五个 Tab 页（首页/投递/导入/统计/设置）顶部改为 iOS 大标题头部 `AdaptiveTabHeader`（34pt 粗体左对齐 + 灰色副标题 + 右上操作按钮）。
+  - 详情 / 编辑 / 导入预览页改用 `AdaptivePageScaffold` → iOS 为 `CupertinoPageScaffold` + `CupertinoNavigationBar`（自动返回按钮、半透明栏）。
+  - 主题 `pageTransitionsTheme` 为 iOS/macOS 配 `CupertinoPageTransitionsBuilder`：横向推进转场 + 右滑返回；安卓保持 `ZoomPageTransitionsBuilder`。
+  - 确认弹窗（删除/批量删除/清空/恢复备份/确认导入）改用 `showAdaptiveConfirm` → iOS 为 `CupertinoAlertDialog`，支持红色 destructive 按钮；安卓为原 `AlertDialog`，按钮文案一致。
+  - 编辑页日期选择改用 `showAdaptiveDatePicker` → iOS 为底部 `CupertinoDatePicker` 滚轮 + 取消/完成；安卓为原 `showDatePicker`（2020–2100）。
+  - 设置页语言切换改用 `AdaptiveSegmentedControl` → iOS 为 `CupertinoSlidingSegmentedControl`；安卓为原 `SegmentedButton`。
+- 安卓端 0 改动：所有 iOS 化都在 `isIos` 分支内，安卓分支逐字保留原实现。
+
+### 修改文件
+
+- 新增 `lib/shared/widgets/adaptive.dart`
+- `lib/app.dart`（底部导航自适应）
+- `lib/core/theme/app_theme.dart`（页面转场 + cupertino import）
+- `lib/features/dashboard/dashboard_page.dart`
+- `lib/features/applications/applications_page.dart`
+- `lib/features/applications/application_detail_page.dart`
+- `lib/features/applications/application_edit_page.dart`
+- `lib/features/import_export/import_page.dart`
+- `lib/features/import_export/import_preview_page.dart`
+- `lib/features/statistics/statistics_page.dart`
+- `lib/features/settings/settings_page.dart`
+
+### 当前状态
+
+- `flutter analyze`：通过（No issues found）
+- `flutter test`：**未能运行**——`sqflite_common_ffi` 需从 GitHub 下载 `sqlite3.x64.windows.dll`，本机网络被重置导致 native assets 构建失败（环境问题，非代码问题）。测试跑的是安卓分支（宿主 `Platform.isIOS=false`），该分支行为与改前一致。
+- iOS 构建：**未运行**——本机为 Windows，无法 `flutter build ios`。
+
+### 在 Mac 上的验证步骤
+
+1. `flutter pub get`
+2. `flutter analyze`
+3. `flutter test`（Mac 网络可下载 sqlite3 native 库时应能通过）
+4. `flutter run -d <iPhone 模拟器/真机>`
+5. 重点看 iOS 观感：底部 CupertinoTabBar、大标题、导航栏右滑返回、确认弹窗、日期滚轮、语言滑动分段。确认安卓端（如有安卓机）仍为原样。
+
+### 已知问题
+
+- 以下控件在 iOS 上仍是 Material 风格，未做 Cupertino 化（功能正常，观感可后续迭代）：编辑页/流程弹窗的 `DropdownButtonFormField`（优先级、流程类型、结果）、导入预览行编辑的状态/方向下拉、各处 `showModalBottomSheet` 底部表单、`SnackBar` 提示。
+- iOS 实机构建/签名未配（需在 Xcode 设 Team）。
+
+### 下一步建议
+
+- 在 Mac 上构建并真机/模拟器验证 iOS 观感。
+- 若要更彻底的 iOS 化，可继续把上述下拉与底部表单改为 `CupertinoPicker` / `CupertinoActionSheet`。
+
+## 2026-06-18 — Claude Code（iOS 端对齐）
+
+### 本次完成
+
+- 完成 iOS 端配置，使行为与安卓端一致，未改动任何安卓端文件或共享 Dart 代码。
+- 经核对：Dart 代码完全跨平台，无 `Platform.isAndroid/isIOS` 分支；数据库用标准 `sqflite` + `getDatabasesPath()`（iOS 原生支持）；导入用 `file_picker`（iOS 用 UIDocumentPickerViewController，支持 csv/xlsx/jobpack）；导出用纯 Dart 的 `csv`/`excel`/`archive` 写入 `getApplicationDocumentsDirectory()/exports`。
+- 在 `ios/Runner/Info.plist` 增加 `UIFileSharingEnabled` 与 `LSSupportsOpeningDocumentsInPlace`，使导出的 CSV/XLSX/.jobpack 文件出现在 iOS「文件」App 中（对齐安卓端导出文件可被用户访问的行为）。
+- 确认 `CFBundleDisplayName` / `CFBundleName` 已为 `JobCopilot`，部署目标 13.0，Swift Package Manager 模板（无 Podfile，插件在 Mac 首次构建时经 SPM 解析）。
+
+### 修改文件
+
+- `ios/Runner/Info.plist`（仅 iOS 平台配置）
+
+### 当前状态
+
+- Dart 代码：未改动，`flutter analyze` 维持通过（同上次记录）。
+- iOS 构建：**未运行**——本机为 Windows，无法执行 `flutter build ios`（需 macOS + Xcode）。iOS 平台配置已就绪，待在 Mac 上验证。
+
+### 在 Mac 上的验证步骤
+
+1. `flutter pub get`（重新生成 `ios/Flutter/ephemeral` 与插件 SPM 包）
+2. `flutter analyze`
+3. `flutter build ios --debug --no-codesign`（模拟器/无签名）或 `flutter run -d <真机>`
+4. 如真机安装，需在 Xcode 设置 Development Team；模拟器无需签名。
+5. 重点验证：导入 CSV/XLSX、导出 CSV/XLSX/.jobpack（文件应出现在「文件」App → JobCopilot 文件夹）、.jobpack 恢复、自定义状态/方向、中英文切换。
+
+### 已知问题
+
+- iOS 端无法在 Windows 上构建验证；首次 Mac 构建时若插件 SPM 解析失败，运行 `flutter clean && flutter pub get`。
+- 导出文件 iOS 路径为沙盒路径，snackbar 显示的路径需用户到「文件」App 查找（与安卓端「显示路径」行为一致）；如需更友好的分享面板，可后续评估 `share_plus`（会改动共享 pubspec）。
+
+### 下一步建议
+
+- 在 Mac 上完成 iOS 构建与真机/模拟器验证，确认与安卓端功能一致。
+
 ## 2026-06-18 21:02 — Codex
 
 ### 本次完成

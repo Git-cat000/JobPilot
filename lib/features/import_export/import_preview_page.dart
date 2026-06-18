@@ -4,6 +4,7 @@ import '../../core/enums/job_enums.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/models/application_record.dart';
 import '../../shared/state/app_controller.dart';
+import '../../shared/widgets/adaptive.dart';
 import '../../shared/widgets/app_card.dart';
 import 'services/import_parser.dart';
 
@@ -15,14 +16,14 @@ class ImportPreviewPage extends StatelessWidget {
     final controller = AppScope.watch(context);
     final preview = controller.currentPreview;
     if (preview == null) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('导入预览')),
+      return AdaptivePageScaffold(
+        title: '导入预览',
         body: const Center(child: Text('暂无导入预览')),
       );
     }
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('导入预览')),
+    return AdaptivePageScaffold(
+      title: '导入预览',
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -105,26 +106,14 @@ class ImportPreviewPage extends StatelessWidget {
               Expanded(
                 child: FilledButton(
                   onPressed: () async {
-                    final ok = await showDialog<bool>(
-                      context: context,
-                      builder: (context) => AlertDialog(
-                        title: const Text('确认导入？'),
-                        content: Text(
+                    final ok = await showAdaptiveConfirm(
+                      context,
+                      title: '确认导入？',
+                      content:
                           '将写入 ${preview.importableRows} 条记录。疑似重复会按预览结果一并导入，请确认。',
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(context, false),
-                            child: const Text('取消'),
-                          ),
-                          FilledButton(
-                            onPressed: () => Navigator.pop(context, true),
-                            child: const Text('确认'),
-                          ),
-                        ],
-                      ),
+                      confirmText: '确认',
                     );
-                    if (ok == true) {
+                    if (ok) {
                       await controller.confirmImport();
                       if (context.mounted) {
                         Navigator.of(context).pop();

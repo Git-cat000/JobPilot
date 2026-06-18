@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/enums/job_enums.dart';
 import '../../core/theme/app_theme.dart';
 import '../../shared/state/app_controller.dart';
+import '../../shared/widgets/adaptive.dart';
 import '../../shared/widgets/app_card.dart';
 import '../applications/application_detail_page.dart';
 import '../applications/application_edit_page.dart';
@@ -40,28 +41,10 @@ class DashboardPage extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'JobPilot',
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    controller.isBusy ? '正在加载本地数据' : '今天适合推进一个小步骤',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppTheme.secondaryText,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+        AdaptiveTabHeader(
+          title: 'JobPilot',
+          subtitle: controller.isBusy ? '正在加载本地数据' : '今天适合推进一个小步骤',
+          actions: [
             FilledButton.icon(
               onPressed: () {
                 Navigator.of(context).pushNamed(ApplicationEditPage.routeName);

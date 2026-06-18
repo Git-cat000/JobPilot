@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../../shared/state/app_controller.dart';
+import '../../shared/widgets/adaptive.dart';
 import '../../shared/widgets/app_card.dart';
 import 'import_preview_page.dart';
 
@@ -14,16 +15,9 @@ class ImportPage extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        Text(
-          '导入',
-          style: Theme.of(
-            context,
-          ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w900),
-        ),
-        const SizedBox(height: 8),
-        const Text(
-          '先识别表头并预览结果，确认后才会写入数据库。',
-          style: TextStyle(color: AppTheme.secondaryText),
+        AdaptiveTabHeader(
+          title: '导入',
+          subtitle: '先识别表头并预览结果，确认后才会写入数据库。',
         ),
         const SizedBox(height: 16),
         AppCard(

@@ -5,6 +5,7 @@ import '../../core/enums/job_enums.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/models/application_record.dart';
 import '../../shared/state/app_controller.dart';
+import '../../shared/widgets/adaptive.dart';
 import '../../shared/widgets/app_card.dart';
 import 'application_detail_page.dart';
 import 'application_edit_page.dart';
@@ -32,16 +33,9 @@ class _ApplicationsPageState extends State<ApplicationsPage> {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        Row(
-          children: [
-            Expanded(
-              child: Text(
-                strings.jobRecords,
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-            ),
+        AdaptiveTabHeader(
+          title: strings.jobRecords,
+          actions: [
             FilledButton.tonalIcon(
               onPressed: () {
                 setState(() {
@@ -218,24 +212,14 @@ class _ApplicationsPageState extends State<ApplicationsPage> {
     BuildContext context,
     AppController controller,
   ) async {
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('批量删除？'),
-        content: Text('将删除 ${selectedIds.length} 条投递记录及其流程记录。'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('取消'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('删除'),
-          ),
-        ],
-      ),
+    final ok = await showAdaptiveConfirm(
+      context,
+      title: '批量删除？',
+      content: '将删除 ${selectedIds.length} 条投递记录及其流程记录。',
+      confirmText: '删除',
+      destructive: true,
     );
-    if (ok == true) {
+    if (ok) {
       await controller.deleteApplications(selectedIds);
       if (!mounted) {
         return;

@@ -4,6 +4,7 @@ import '../../core/enums/job_enums.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/models/application_record.dart';
 import '../../shared/state/app_controller.dart';
+import '../../shared/widgets/adaptive.dart';
 import '../../shared/widgets/app_card.dart';
 
 class ApplicationEditPage extends StatefulWidget {
@@ -86,8 +87,8 @@ class _ApplicationEditPageState extends State<ApplicationEditPage> {
   @override
   Widget build(BuildContext context) {
     final controller = AppScope.watch(context);
-    return Scaffold(
-      appBar: AppBar(title: Text(original == null ? '新增投递' : '编辑投递')),
+    return AdaptivePageScaffold(
+      title: original == null ? '新增投递' : '编辑投递',
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -595,11 +596,11 @@ class _DateField extends StatelessWidget {
         suffixIcon: const Icon(Icons.calendar_month_outlined),
       ),
       onTap: () async {
-        final picked = await showDatePicker(
-          context: context,
+        final picked = await showAdaptiveDatePicker(
+          context,
+          initialDate: DateTime.now(),
           firstDate: DateTime(2020),
           lastDate: DateTime(2100),
-          initialDate: DateTime.now(),
         );
         if (picked != null) {
           controller.text = picked.toIso8601String().split('T').first;

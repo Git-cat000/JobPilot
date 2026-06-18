@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 
 class AppTheme {
   static const background = Color(0xFFF6F7F9);
@@ -25,6 +26,18 @@ class AppTheme {
       colorScheme: colorScheme,
       scaffoldBackgroundColor: const Color(0xFFF7F8FA),
       fontFamilyFallback: const ['Microsoft YaHei', 'PingFang SC'],
+      // iOS 端使用 Cupertino 横向推进转场并支持右滑返回；
+      // 安卓端保持 Material 3 默认的 Zoom 转场，行为不变。
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.android: ZoomPageTransitionsBuilder(),
+          TargetPlatform.fuchsia: ZoomPageTransitionsBuilder(),
+          TargetPlatform.linux: ZoomPageTransitionsBuilder(),
+          TargetPlatform.windows: ZoomPageTransitionsBuilder(),
+          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
+        },
+      ),
       appBarTheme: const AppBarTheme(
         centerTitle: false,
         elevation: 0,

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/app_strings.dart';
 import '../../core/theme/app_theme.dart';
 import '../../shared/state/app_controller.dart';
+import '../../shared/widgets/adaptive.dart';
 import '../../shared/widgets/app_card.dart';
 
 class SettingsPage extends StatelessWidget {
@@ -15,12 +16,7 @@ class SettingsPage extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        Text(
-          strings.settings,
-          style: Theme.of(
-            context,
-          ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w900),
-        ),
+        AdaptiveTabHeader(title: strings.settings),
         const SizedBox(height: 16),
         AppCard(
           child: Column(
@@ -28,15 +24,13 @@ class SettingsPage extends StatelessWidget {
             children: [
               const SectionTitle('语言 / Language'),
               const SizedBox(height: 8),
-              SegmentedButton<String>(
-                segments: [
-                  ButtonSegment(value: 'zh', label: Text(strings.chinese)),
-                  ButtonSegment(value: 'en', label: Text(strings.english)),
+              AdaptiveSegmentedControl<String>(
+                value: controller.language,
+                options: [
+                  ('zh', strings.chinese),
+                  ('en', strings.english),
                 ],
-                selected: {controller.language},
-                onSelectionChanged: (value) {
-                  controller.setLanguage(value.first);
-                },
+                onChanged: controller.setLanguage,
               ),
               const SizedBox(height: 14),
               _SettingsAction(
@@ -104,24 +98,14 @@ class SettingsPage extends StatelessWidget {
     BuildContext context,
     AppController controller,
   ) async {
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('清空所有数据？'),
-        content: const Text('此操作会删除所有投递记录和流程记录，且不可撤销。'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('取消'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('清空'),
-          ),
-        ],
-      ),
+    final ok = await showAdaptiveConfirm(
+      context,
+      title: '清空所有数据？',
+      content: '此操作会删除所有投递记录和流程记录，且不可撤销。',
+      confirmText: '清空',
+      destructive: true,
     );
-    if (ok == true) {
+    if (ok) {
       await controller.clearAll();
     }
   }
@@ -130,24 +114,13 @@ class SettingsPage extends StatelessWidget {
     BuildContext context,
     AppController controller,
   ) async {
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('导入备份？'),
-        content: const Text('导入 .jobpack 可能覆盖当前本地数据。恢复失败时会保留原数据库备份。'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('取消'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('选择备份'),
-          ),
-        ],
-      ),
+    final ok = await showAdaptiveConfirm(
+      context,
+      title: '导入备份？',
+      content: '导入 .jobpack 可能覆盖当前本地数据。恢复失败时会保留原数据库备份。',
+      confirmText: '选择备份',
     );
-    if (ok == true) {
+    if (ok) {
       await controller.importJobpack();
     }
   }

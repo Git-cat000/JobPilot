@@ -4,6 +4,7 @@ import '../../core/enums/job_enums.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/models/stage_record.dart';
 import '../../shared/state/app_controller.dart';
+import '../../shared/widgets/adaptive.dart';
 import '../../shared/widgets/app_card.dart';
 import 'application_edit_page.dart';
 
@@ -22,15 +23,15 @@ class ApplicationDetailPage extends StatelessWidget {
         .firstOrNull;
 
     if (record == null) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('投递详情')),
+      return AdaptivePageScaffold(
+        title: '投递详情',
         body: const Center(child: Text('记录不存在或已删除')),
       );
     }
     final stages = controller.stagesFor(record.id);
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('投递详情')),
+    return AdaptivePageScaffold(
+      title: '投递详情',
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -176,24 +177,14 @@ class ApplicationDetailPage extends StatelessWidget {
 
   Future<void> _confirmDelete(BuildContext context, String id) async {
     final controller = AppScope.watch(context);
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('删除投递记录？'),
-        content: const Text('删除后，该岗位关联的流程记录也会被删除。'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('取消'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('删除'),
-          ),
-        ],
-      ),
+    final ok = await showAdaptiveConfirm(
+      context,
+      title: '删除投递记录？',
+      content: '删除后，该岗位关联的流程记录也会被删除。',
+      confirmText: '删除',
+      destructive: true,
     );
-    if (ok == true) {
+    if (ok) {
       await controller.deleteApplication(id);
       if (context.mounted) {
         Navigator.of(context).pop();
