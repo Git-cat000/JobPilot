@@ -1,0 +1,6 @@
+{
+  "semiconductor": ["半导体", "工艺", "器件", "良率", "EDA", "TCAD", "CST", "VNA", "存储器", "DRAM", "NAND", "HZO", "芯片"],
+  "ai_algorithm": ["算法", "机器学习", "深度学习", "推荐", "NLP", "CV", "LLM", "RAG", "Agent", "大模型"],
+  "quant": ["量化", "策略", "因子", "回测", "alpha", "Alpha", "交易", "金融工程"],
+  "internet_dev": ["后端", "前端", "客户端", "服务端", "数据库", "分布式", "Java", "Go", "Python"]
+}
