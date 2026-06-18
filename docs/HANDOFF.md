@@ -1,5 +1,75 @@
 # HANDOFF.md
 
+## 2026-06-18 20:36 — Codex
+
+### 本次完成
+
+- 将导入预览页的行编辑界面从普通弹窗优化为底部抽屉式编辑面板。
+- 编辑面板增加标题说明、分组表单、图标输入框、状态 / 方向选择和底部固定操作按钮。
+- 将 Android 安装后的应用显示名从 `jobpilot_mobile` 改为 `JobCopilot`，包名保持不变以便覆盖升级。
+- 重新构建 debug APK 并刷新 README 校验值。
+
+### 修改文件
+
+- `android/app/src/main/AndroidManifest.xml`
+- `lib/features/import_export/import_preview_page.dart`
+- `README.md`
+- `docs/HANDOFF.md`
+
+### 当前状态
+
+- `flutter analyze`：通过
+- `flutter test --reporter compact`：通过
+- `flutter build apk --debug`：通过
+- APK：`dist/jobpilot-v1-debug.apk`
+- APK SHA-256：`3B86D295F722E56C11F62EAEF8685DE320702DCC607185D0A51FFA89C1787E3A`
+
+### 已知问题
+
+- 当前仍是 debug APK。
+
+### 下一步建议
+
+- 在 Android 真机上确认安装后桌面显示名为 `JobCopilot`，并验证导入预览编辑面板在小屏幕和键盘弹出时不遮挡保存按钮。
+
+## 2026-06-18 20:25 — Codex
+
+### 本次完成
+
+- 优化投递页顶部多选按钮，改为和新增按钮同规格的 Material 3 圆角按钮。
+- 多选模式增加全选 / 取消全选能力，并保留批量删除确认。
+- 将编辑投递页的状态 / 方向选择改为底部选择面板，避免原下拉框添加自定义项后出现异常界面。
+- 自定义状态 / 方向支持在选择面板中左滑删除；内置选项不可删除。
+- 本地保留 `.ai/` 和 `Agents.md`，但已从 Git 跟踪中移除并写入 `.gitignore`，后续不会推送到 GitHub。
+- 重新构建 debug APK 并刷新 README 校验值。
+
+### 修改文件
+
+- `.gitignore`
+- `README.md`
+- `docs/HANDOFF.md`
+- `lib/data/repositories/app_option_repository.dart`
+- `lib/shared/state/app_controller.dart`
+- `lib/features/applications/applications_page.dart`
+- `lib/features/applications/application_edit_page.dart`
+
+### 当前状态
+
+- `flutter analyze`：通过
+- `flutter test --reporter compact`：通过
+- `flutter build apk --debug`：通过
+- APK：`dist/jobpilot-v1-debug.apk`
+- APK SHA-256：`3B86D295F722E56C11F62EAEF8685DE320702DCC607185D0A51FFA89C1787E3A`
+
+### 已知问题
+
+- CodeGraph 未初始化：当前项目目录没有 `.codegraph/`。
+- 当前仍是 debug APK。
+
+### 下一步建议
+
+- 在真机上重点验证自定义选项添加、左滑删除、删除当前选中项后的回退值，以及投递页全选/批量删除。
+
 ## 2026-06-18 20:10 — Codex
 
 ### 本次完成

@@ -120,6 +120,22 @@ class AppController extends ChangeNotifier {
     return value;
   }
 
+  Future<void> deleteCustomStatus(String value) async {
+    if (!customStatuses.containsKey(value)) {
+      return;
+    }
+    await appOptionRepository.delete(type: 'status', value: value);
+    await reload();
+  }
+
+  Future<void> deleteCustomDirection(String value) async {
+    if (!customDirections.containsKey(value)) {
+      return;
+    }
+    await appOptionRepository.delete(type: 'direction', value: value);
+    await reload();
+  }
+
   Future<void> setLanguage(String value) async {
     language = value;
     await appSettingsRepository.set('language', value);

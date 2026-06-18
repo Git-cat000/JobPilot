@@ -57,3 +57,10 @@ app.*.map.json
 /captures/
 /tmp/
 /temp/
+
+# Local AI-agent instructions and working memory are not project source.
+/Agents.md
+/AGENTS.md
+/.ai/
+/.agents/
+/.codex/

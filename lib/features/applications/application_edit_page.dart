@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/enums/job_enums.dart';
+import '../../core/theme/app_theme.dart';
 import '../../data/models/application_record.dart';
 import '../../shared/state/app_controller.dart';
 import '../../shared/widgets/app_card.dart';
@@ -108,43 +109,24 @@ class _ApplicationEditPageState extends State<ApplicationEditPage> {
                 decoration: const InputDecoration(labelText: '城市'),
               ),
               const SizedBox(height: 12),
-              DropdownButtonFormField<String>(
-                initialValue: direction,
-                decoration: const InputDecoration(labelText: '岗位方向'),
-                items: controller
-                    .directionOptions()
-                    .entries
-                    .map(
-                      (entry) => DropdownMenuItem(
-                        value: entry.key,
-                        child: Text(
-                          directionLabel(
-                            entry.key,
-                            language: controller.language,
-                            custom: controller.customDirections,
-                          ),
-                        ),
-                      ),
-                    )
-                    .toList(),
-                onChanged: (value) =>
-                    setState(() => direction = value ?? 'other'),
-              ),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: TextButton.icon(
-                  onPressed: () async {
-                    final value = await _addCustomOption(
-                      context,
-                      isStatus: false,
-                    );
-                    if (value != null) {
-                      setState(() => direction = value);
-                    }
-                  },
-                  icon: const Icon(Icons.add_circle_outline),
-                  label: const Text('添加自定义方向'),
+              _OptionPickerField(
+                label: '岗位方向',
+                value: directionLabel(
+                  direction,
+                  language: controller.language,
+                  custom: controller.customDirections,
                 ),
+                onTap: () async {
+                  final value = await _showOptionPicker(
+                    context,
+                    title: '选择岗位方向',
+                    currentValue: direction,
+                    isStatus: false,
+                  );
+                  if (value != null && mounted) {
+                    setState(() => direction = value);
+                  }
+                },
               ),
             ],
           ),
@@ -152,43 +134,24 @@ class _ApplicationEditPageState extends State<ApplicationEditPage> {
           _FormSection(
             title: '求职状态',
             children: [
-              DropdownButtonFormField<String>(
-                initialValue: status,
-                decoration: const InputDecoration(labelText: '当前状态'),
-                items: controller
-                    .statusOptions()
-                    .entries
-                    .map(
-                      (entry) => DropdownMenuItem(
-                        value: entry.key,
-                        child: Text(
-                          statusLabel(
-                            entry.key,
-                            language: controller.language,
-                            custom: controller.customStatuses,
-                          ),
-                        ),
-                      ),
-                    )
-                    .toList(),
-                onChanged: (value) =>
-                    setState(() => status = value ?? 'applied'),
-              ),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: TextButton.icon(
-                  onPressed: () async {
-                    final value = await _addCustomOption(
-                      context,
-                      isStatus: true,
-                    );
-                    if (value != null) {
-                      setState(() => status = value);
-                    }
-                  },
-                  icon: const Icon(Icons.add_circle_outline),
-                  label: const Text('添加自定义状态'),
+              _OptionPickerField(
+                label: '当前状态',
+                value: statusLabel(
+                  status,
+                  language: controller.language,
+                  custom: controller.customStatuses,
                 ),
+                onTap: () async {
+                  final value = await _showOptionPicker(
+                    context,
+                    title: '选择求职状态',
+                    currentValue: status,
+                    isStatus: true,
+                  );
+                  if (value != null && mounted) {
+                    setState(() => status = value);
+                  }
+                },
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
@@ -307,40 +270,224 @@ class _ApplicationEditPageState extends State<ApplicationEditPage> {
     }
   }
 
-  Future<String?> _addCustomOption(
+  Future<String?> _showOptionPicker(
     BuildContext context, {
+    required String title,
+    required String currentValue,
     required bool isStatus,
   }) async {
     final controller = AppScope.watch(context);
-    final text = TextEditingController();
-    final label = await showDialog<String>(
+    return showModalBottomSheet<String>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(isStatus ? '添加自定义状态' : '添加自定义方向'),
-        content: TextField(
-          controller: text,
-          autofocus: true,
-          decoration: const InputDecoration(labelText: '名称'),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('取消'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, text.text.trim()),
-            child: const Text('添加'),
-          ),
-        ],
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheetContext) => _OptionPickerSheet(
+        title: title,
+        currentValue: currentValue,
+        isStatus: isStatus,
+        controller: controller,
       ),
     );
+  }
+}
+
+class _OptionPickerField extends StatelessWidget {
+  const _OptionPickerField({
+    required this.label,
+    required this.value,
+    required this.onTap,
+  });
+
+  final String label;
+  final String value;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(14),
+      onTap: onTap,
+      child: InputDecorator(
+        decoration: InputDecoration(
+          labelText: label,
+          suffixIcon: const Icon(Icons.keyboard_arrow_right_rounded),
+        ),
+        child: Text(value, style: const TextStyle(fontWeight: FontWeight.w700)),
+      ),
+    );
+  }
+}
+
+class _OptionPickerSheet extends StatefulWidget {
+  const _OptionPickerSheet({
+    required this.title,
+    required this.currentValue,
+    required this.isStatus,
+    required this.controller,
+  });
+
+  final String title;
+  final String currentValue;
+  final bool isStatus;
+  final AppController controller;
+
+  @override
+  State<_OptionPickerSheet> createState() => _OptionPickerSheetState();
+}
+
+class _OptionPickerSheetState extends State<_OptionPickerSheet> {
+  final text = TextEditingController();
+
+  @override
+  void dispose() {
     text.dispose();
-    if (label == null || label.isEmpty) {
-      return null;
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final options = widget.isStatus
+        ? widget.controller.statusOptions()
+        : widget.controller.directionOptions();
+    final customOptions = widget.isStatus
+        ? widget.controller.customStatuses
+        : widget.controller.customDirections;
+    final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(16, 0, 16, 16 + bottomInset),
+      child: SafeArea(
+        top: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    widget.title,
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  tooltip: '关闭',
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(Icons.close),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Flexible(
+              child: ListView.separated(
+                shrinkWrap: true,
+                itemCount: options.length,
+                separatorBuilder: (context, index) => const Divider(height: 1),
+                itemBuilder: (context, index) {
+                  final entry = options.entries.elementAt(index);
+                  final isCustom = customOptions.containsKey(entry.key);
+                  final label = widget.isStatus
+                      ? statusLabel(
+                          entry.key,
+                          language: widget.controller.language,
+                          custom: widget.controller.customStatuses,
+                        )
+                      : directionLabel(
+                          entry.key,
+                          language: widget.controller.language,
+                          custom: widget.controller.customDirections,
+                        );
+                  final tile = ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(label),
+                    subtitle: isCustom ? const Text('自定义选项') : null,
+                    trailing: entry.key == widget.currentValue
+                        ? const Icon(
+                            Icons.check_circle,
+                            color: AppTheme.primary,
+                          )
+                        : null,
+                    onTap: () => Navigator.pop(context, entry.key),
+                  );
+                  if (!isCustom) {
+                    return tile;
+                  }
+                  return Dismissible(
+                    key: ValueKey('${widget.isStatus}-${entry.key}'),
+                    direction: DismissDirection.endToStart,
+                    background: Container(
+                      alignment: Alignment.centerRight,
+                      padding: const EdgeInsets.symmetric(horizontal: 18),
+                      decoration: BoxDecoration(
+                        color: AppTheme.danger.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.delete_outline,
+                        color: AppTheme.danger,
+                      ),
+                    ),
+                    confirmDismiss: (_) async {
+                      if (widget.isStatus) {
+                        await widget.controller.deleteCustomStatus(entry.key);
+                      } else {
+                        await widget.controller.deleteCustomDirection(
+                          entry.key,
+                        );
+                      }
+                      if (!mounted || !context.mounted) {
+                        return false;
+                      }
+                      if (entry.key == widget.currentValue) {
+                        Navigator.pop(
+                          context,
+                          widget.isStatus ? 'applied' : 'other',
+                        );
+                        return false;
+                      }
+                      setState(() {});
+                      return true;
+                    },
+                    child: tile,
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: text,
+                    decoration: InputDecoration(
+                      hintText: widget.isStatus ? '新增状态' : '新增方向',
+                      prefixIcon: const Icon(Icons.add_circle_outline),
+                    ),
+                    onSubmitted: (_) => _addAndSelect(),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                FilledButton(onPressed: _addAndSelect, child: const Text('添加')),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _addAndSelect() async {
+    final label = text.text.trim();
+    if (label.isEmpty) {
+      return;
     }
-    return isStatus
-        ? controller.addCustomStatus(label)
-        : controller.addCustomDirection(label);
+    final value = widget.isStatus
+        ? await widget.controller.addCustomStatus(label)
+        : await widget.controller.addCustomDirection(label);
+    if (mounted) {
+      Navigator.pop(context, value);
+    }
   }
 }
 

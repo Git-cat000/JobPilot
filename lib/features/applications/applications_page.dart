@@ -42,7 +42,7 @@ class _ApplicationsPageState extends State<ApplicationsPage> {
                 ),
               ),
             ),
-            TextButton.icon(
+            FilledButton.tonalIcon(
               onPressed: () {
                 setState(() {
                   selecting = !selecting;
@@ -52,6 +52,7 @@ class _ApplicationsPageState extends State<ApplicationsPage> {
               icon: Icon(selecting ? Icons.close : Icons.checklist_outlined),
               label: Text(selecting ? strings.done : strings.select),
             ),
+            const SizedBox(width: 8),
             if (!selecting)
               FilledButton.icon(
                 onPressed: () async {
@@ -67,9 +68,29 @@ class _ApplicationsPageState extends State<ApplicationsPage> {
         if (selecting) ...[
           const SizedBox(height: 10),
           AppCard(
-            child: Row(
+            child: Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              crossAxisAlignment: WrapCrossAlignment.center,
               children: [
-                Expanded(child: Text('已选择 ${selectedIds.length} 项')),
+                SizedBox(
+                  width: 120,
+                  child: Text(
+                    '已选择 ${selectedIds.length} 项',
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                ),
+                FilledButton.tonalIcon(
+                  onPressed: records.isEmpty
+                      ? null
+                      : () => _toggleSelectAll(records),
+                  icon: Icon(
+                    _allVisibleSelected(records)
+                        ? Icons.remove_done_outlined
+                        : Icons.done_all_outlined,
+                  ),
+                  label: Text(_allVisibleSelected(records) ? '取消全选' : '全选'),
+                ),
                 FilledButton.icon(
                   onPressed: selectedIds.isEmpty
                       ? null
@@ -174,6 +195,23 @@ class _ApplicationsPageState extends State<ApplicationsPage> {
     final statusOk = status == 'all' || record.status == status;
     final directionOk = direction == 'all' || record.jobDirection == direction;
     return queryOk && statusOk && directionOk;
+  }
+
+  bool _allVisibleSelected(List<ApplicationRecord> records) {
+    return records.isNotEmpty &&
+        records.every((record) => selectedIds.contains(record.id));
+  }
+
+  void _toggleSelectAll(List<ApplicationRecord> records) {
+    setState(() {
+      if (_allVisibleSelected(records)) {
+        for (final record in records) {
+          selectedIds.remove(record.id);
+        }
+      } else {
+        selectedIds.addAll(records.map((record) => record.id));
+      }
+    });
   }
 
   Future<void> _confirmBulkDelete(

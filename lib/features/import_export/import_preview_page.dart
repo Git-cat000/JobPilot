@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/enums/job_enums.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/models/application_record.dart';
 import '../../shared/state/app_controller.dart';
@@ -156,120 +157,302 @@ class ImportPreviewPage extends StatelessWidget {
     int index,
     ApplicationRecord record,
   ) async {
-    final company = TextEditingController(text: record.companyName);
-    final title = TextEditingController(text: record.jobTitle);
-    final city = TextEditingController(text: record.city);
-    final channel = TextEditingController(text: record.channel);
-    final applyDate = TextEditingController(text: record.applyDate);
-    final remark = TextEditingController(text: record.remark);
-    var status = record.status;
-    var direction = record.jobDirection;
-    final updated = await showDialog<ApplicationRecord>(
+    final updated = await showModalBottomSheet<ApplicationRecord>(
       context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          title: const Text('编辑导入记录'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: company,
-                  decoration: const InputDecoration(labelText: '公司名称 *'),
-                ),
-                const SizedBox(height: 10),
-                TextField(
-                  controller: title,
-                  decoration: const InputDecoration(labelText: '岗位名称 *'),
-                ),
-                const SizedBox(height: 10),
-                TextField(
-                  controller: city,
-                  decoration: const InputDecoration(labelText: '城市'),
-                ),
-                const SizedBox(height: 10),
-                DropdownButtonFormField<String>(
-                  initialValue: status,
-                  decoration: const InputDecoration(labelText: '状态'),
-                  items: controller
-                      .statusOptions()
-                      .entries
-                      .map(
-                        (entry) => DropdownMenuItem(
-                          value: entry.key,
-                          child: Text(entry.value),
-                        ),
-                      )
-                      .toList(),
-                  onChanged: (value) =>
-                      setState(() => status = value ?? status),
-                ),
-                const SizedBox(height: 10),
-                DropdownButtonFormField<String>(
-                  initialValue: direction,
-                  decoration: const InputDecoration(labelText: '方向'),
-                  items: controller
-                      .directionOptions()
-                      .entries
-                      .map(
-                        (entry) => DropdownMenuItem(
-                          value: entry.key,
-                          child: Text(entry.value),
-                        ),
-                      )
-                      .toList(),
-                  onChanged: (value) =>
-                      setState(() => direction = value ?? direction),
-                ),
-                const SizedBox(height: 10),
-                TextField(
-                  controller: applyDate,
-                  decoration: const InputDecoration(labelText: '投递日期'),
-                ),
-                const SizedBox(height: 10),
-                TextField(
-                  controller: channel,
-                  decoration: const InputDecoration(labelText: '渠道'),
-                ),
-                const SizedBox(height: 10),
-                TextField(
-                  controller: remark,
-                  decoration: const InputDecoration(labelText: '备注'),
-                ),
-              ],
-            ),
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (context) =>
+          _ImportRowEditSheet(record: record, controller: controller),
+    );
+    if (updated != null) {
+      controller.updatePreviewRecord(index, updated);
+    }
+  }
+}
+
+class _ImportRowEditSheet extends StatefulWidget {
+  const _ImportRowEditSheet({required this.record, required this.controller});
+
+  final ApplicationRecord record;
+  final AppController controller;
+
+  @override
+  State<_ImportRowEditSheet> createState() => _ImportRowEditSheetState();
+}
+
+class _ImportRowEditSheetState extends State<_ImportRowEditSheet> {
+  late final TextEditingController company;
+  late final TextEditingController title;
+  late final TextEditingController city;
+  late final TextEditingController channel;
+  late final TextEditingController applyDate;
+  late final TextEditingController remark;
+  late String status;
+  late String direction;
+
+  @override
+  void initState() {
+    super.initState();
+    company = TextEditingController(text: widget.record.companyName);
+    title = TextEditingController(text: widget.record.jobTitle);
+    city = TextEditingController(text: widget.record.city);
+    channel = TextEditingController(text: widget.record.channel);
+    applyDate = TextEditingController(text: widget.record.applyDate);
+    remark = TextEditingController(text: widget.record.remark);
+    status = widget.record.status;
+    direction = widget.record.jobDirection;
+  }
+
+  @override
+  void dispose() {
+    for (final item in [company, title, city, channel, applyDate, remark]) {
+      item.dispose();
+    }
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
+    final statusOptions = widget.controller.statusOptions();
+    final directionOptions = widget.controller.directionOptions();
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(16, 0, 16, 16 + bottomInset),
+      child: SafeArea(
+        top: false,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.sizeOf(context).height * 0.88,
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('取消'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(
-                context,
-                record.copyWith(
-                  companyName: company.text,
-                  jobTitle: title.text,
-                  city: city.text,
-                  channel: channel.text,
-                  applyDate: applyDate.text,
-                  remark: remark.text,
-                  status: status,
-                  jobDirection: direction,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '编辑导入记录',
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(fontWeight: FontWeight.w900),
+                        ),
+                        const SizedBox(height: 4),
+                        const Text(
+                          '确认导入前可以修正识别错误',
+                          style: TextStyle(color: AppTheme.secondaryText),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: '关闭',
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Expanded(
+                child: ListView(
+                  children: [
+                    _SheetSection(
+                      title: '必填信息',
+                      children: [
+                        TextField(
+                          controller: company,
+                          decoration: const InputDecoration(
+                            labelText: '公司名称 *',
+                            prefixIcon: Icon(Icons.apartment_outlined),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        TextField(
+                          controller: title,
+                          decoration: const InputDecoration(
+                            labelText: '岗位名称 *',
+                            prefixIcon: Icon(Icons.work_outline),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+                    _SheetSection(
+                      title: '分类与状态',
+                      children: [
+                        DropdownButtonFormField<String>(
+                          initialValue: statusOptions.containsKey(status)
+                              ? status
+                              : 'applied',
+                          decoration: const InputDecoration(
+                            labelText: '当前状态',
+                            prefixIcon: Icon(Icons.flag_outlined),
+                          ),
+                          items: statusOptions.entries
+                              .map(
+                                (entry) => DropdownMenuItem(
+                                  value: entry.key,
+                                  child: Text(
+                                    statusLabel(
+                                      entry.key,
+                                      language: widget.controller.language,
+                                      custom: widget.controller.customStatuses,
+                                    ),
+                                  ),
+                                ),
+                              )
+                              .toList(),
+                          onChanged: (value) =>
+                              setState(() => status = value ?? status),
+                        ),
+                        const SizedBox(height: 12),
+                        DropdownButtonFormField<String>(
+                          initialValue: directionOptions.containsKey(direction)
+                              ? direction
+                              : 'other',
+                          decoration: const InputDecoration(
+                            labelText: '岗位方向',
+                            prefixIcon: Icon(Icons.explore_outlined),
+                          ),
+                          items: directionOptions.entries
+                              .map(
+                                (entry) => DropdownMenuItem(
+                                  value: entry.key,
+                                  child: Text(
+                                    directionLabel(
+                                      entry.key,
+                                      language: widget.controller.language,
+                                      custom:
+                                          widget.controller.customDirections,
+                                    ),
+                                  ),
+                                ),
+                              )
+                              .toList(),
+                          onChanged: (value) =>
+                              setState(() => direction = value ?? direction),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+                    _SheetSection(
+                      title: '补充信息',
+                      children: [
+                        TextField(
+                          controller: city,
+                          decoration: const InputDecoration(
+                            labelText: '城市',
+                            prefixIcon: Icon(Icons.location_on_outlined),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        TextField(
+                          controller: applyDate,
+                          decoration: const InputDecoration(
+                            labelText: '投递日期',
+                            prefixIcon: Icon(Icons.calendar_month_outlined),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        TextField(
+                          controller: channel,
+                          decoration: const InputDecoration(
+                            labelText: '渠道',
+                            prefixIcon: Icon(Icons.public_outlined),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        TextField(
+                          controller: remark,
+                          minLines: 3,
+                          maxLines: 5,
+                          decoration: const InputDecoration(
+                            labelText: '备注',
+                            prefixIcon: Icon(Icons.notes_outlined),
+                            alignLabelWithHint: true,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
-              child: const Text('保存'),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('取消'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: FilledButton.icon(
+                      onPressed: _save,
+                      icon: const Icon(Icons.check),
+                      label: const Text('保存'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _save() {
+    Navigator.pop(
+      context,
+      widget.record.copyWith(
+        companyName: company.text.trim(),
+        jobTitle: title.text.trim(),
+        city: city.text.trim(),
+        channel: channel.text.trim(),
+        applyDate: applyDate.text.trim(),
+        remark: remark.text.trim(),
+        status: status,
+        jobDirection: direction,
+      ),
+    );
+  }
+}
+
+class _SheetSection extends StatelessWidget {
+  const _SheetSection({required this.title, required this.children});
+
+  final String title;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppTheme.border.withValues(alpha: 0.75)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: Theme.of(
+                context,
+              ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w900),
             ),
+            const SizedBox(height: 12),
+            ...children,
           ],
         ),
       ),
     );
-    for (final item in [company, title, city, channel, applyDate, remark]) {
-      item.dispose();
-    }
-    if (updated != null) {
-      controller.updatePreviewRecord(index, updated);
-    }
   }
 }
 

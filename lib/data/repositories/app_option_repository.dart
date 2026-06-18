@@ -22,4 +22,13 @@ class AppOptionRepository {
     final db = await database.database;
     await db.insert('app_options', option.toMap());
   }
+
+  Future<void> delete({required String type, required String value}) async {
+    final db = await database.database;
+    await db.delete(
+      'app_options',
+      where: 'type = ? AND value = ?',
+      whereArgs: [type, value],
+    );
+  }
 }
