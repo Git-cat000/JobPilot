@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/app_strings.dart';
 import '../../core/enums/job_enums.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/models/application_record.dart';
@@ -14,30 +15,31 @@ class ImportPreviewPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = AppScope.watch(context);
+    final strings = AppStrings(controller.language);
     final preview = controller.currentPreview;
     if (preview == null) {
       return AdaptivePageScaffold(
-        title: '导入预览',
-        body: const Center(child: Text('暂无导入预览')),
+        title: strings.importPreview,
+        body: Center(child: Text(strings.noPreview)),
       );
     }
 
     return AdaptivePageScaffold(
-      title: '导入预览',
+      title: strings.importPreview,
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           Row(
             children: [
-              _PreviewMetric(label: '总行数', value: '${preview.totalRows}'),
+              _PreviewMetric(label: strings.totalRows, value: '${preview.totalRows}'),
               const SizedBox(width: 10),
-              _PreviewMetric(label: '可导入', value: '${preview.importableRows}'),
+              _PreviewMetric(label: strings.importable, value: '${preview.importableRows}'),
               const SizedBox(width: 10),
-              _PreviewMetric(label: '错误', value: '${preview.failedRows}'),
+              _PreviewMetric(label: strings.errors, value: '${preview.failedRows}'),
             ],
           ),
           const SizedBox(height: 16),
-          const SectionTitle('字段映射结果'),
+          SectionTitle(strings.mappingResultTitle),
           const SizedBox(height: 10),
           AppCard(
             child: Wrap(
@@ -54,7 +56,7 @@ class ImportPreviewPage extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          const SectionTitle('记录状态'),
+          SectionTitle(strings.recordStatusTitle),
           const SizedBox(height: 10),
           ...preview.rows.asMap().entries.map(
             (entry) => Padding(
@@ -72,7 +74,7 @@ class ImportPreviewPage extends StatelessWidget {
                           ),
                         ),
                         IconButton(
-                          tooltip: '编辑',
+                          tooltip: strings.edit,
                           onPressed: () => _editRow(
                             context,
                             controller,
@@ -99,7 +101,7 @@ class ImportPreviewPage extends StatelessWidget {
               Expanded(
                 child: OutlinedButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('取消导入'),
+                  child: Text(strings.cancelImport),
                 ),
               ),
               const SizedBox(width: 12),
@@ -108,10 +110,9 @@ class ImportPreviewPage extends StatelessWidget {
                   onPressed: () async {
                     final ok = await showAdaptiveConfirm(
                       context,
-                      title: '确认导入？',
-                      content:
-                          '将写入 ${preview.importableRows} 条记录。疑似重复会按预览结果一并导入，请确认。',
-                      confirmText: '确认',
+                      title: strings.confirmImportTitle,
+                      content: strings.confirmImportContent(preview.importableRows),
+                      confirmText: strings.confirm,
                     );
                     if (ok) {
                       await controller.confirmImport();
@@ -120,7 +121,7 @@ class ImportPreviewPage extends StatelessWidget {
                       }
                     }
                   },
-                  child: const Text('确认导入'),
+                  child: Text(strings.confirmImport),
                 ),
               ),
             ],
@@ -178,6 +179,7 @@ class _ImportRowEditSheetState extends State<_ImportRowEditSheet> {
   late final TextEditingController remark;
   late String status;
   late String direction;
+  AppStrings get strings => AppStrings(widget.controller.language);
 
   @override
   void initState() {
@@ -224,20 +226,20 @@ class _ImportRowEditSheetState extends State<_ImportRowEditSheet> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '编辑导入记录',
+                          strings.editRowTitle,
                           style: Theme.of(context).textTheme.titleLarge
                               ?.copyWith(fontWeight: FontWeight.w900),
                         ),
                         const SizedBox(height: 4),
-                        const Text(
-                          '确认导入前可以修正识别错误',
-                          style: TextStyle(color: AppTheme.secondaryText),
+                        Text(
+                          strings.editRowHint,
+                          style: const TextStyle(color: AppTheme.secondaryText),
                         ),
                       ],
                     ),
                   ),
                   IconButton(
-                    tooltip: '关闭',
+                    tooltip: strings.close,
                     onPressed: () => Navigator.pop(context),
                     icon: const Icon(Icons.close),
                   ),
@@ -248,36 +250,36 @@ class _ImportRowEditSheetState extends State<_ImportRowEditSheet> {
                 child: ListView(
                   children: [
                     _SheetSection(
-                      title: '必填信息',
+                      title: strings.requiredSection,
                       children: [
                         TextField(
                           controller: company,
-                          decoration: const InputDecoration(
-                            labelText: '公司名称 *',
-                            prefixIcon: Icon(Icons.apartment_outlined),
+                          decoration: InputDecoration(
+                            labelText: strings.companyNameField,
+                            prefixIcon: const Icon(Icons.apartment_outlined),
                           ),
                         ),
                         const SizedBox(height: 12),
                         TextField(
                           controller: title,
-                          decoration: const InputDecoration(
-                            labelText: '岗位名称 *',
-                            prefixIcon: Icon(Icons.work_outline),
+                          decoration: InputDecoration(
+                            labelText: strings.jobTitleField,
+                            prefixIcon: const Icon(Icons.work_outline),
                           ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 14),
                     _SheetSection(
-                      title: '分类与状态',
+                      title: strings.classificationSection,
                       children: [
                         DropdownButtonFormField<String>(
                           initialValue: statusOptions.containsKey(status)
                               ? status
                               : 'applied',
-                          decoration: const InputDecoration(
-                            labelText: '当前状态',
-                            prefixIcon: Icon(Icons.flag_outlined),
+                          decoration: InputDecoration(
+                            labelText: strings.currentStatusField,
+                            prefixIcon: const Icon(Icons.flag_outlined),
                           ),
                           items: statusOptions.entries
                               .map(
@@ -301,9 +303,9 @@ class _ImportRowEditSheetState extends State<_ImportRowEditSheet> {
                           initialValue: directionOptions.containsKey(direction)
                               ? direction
                               : 'other',
-                          decoration: const InputDecoration(
-                            labelText: '岗位方向',
-                            prefixIcon: Icon(Icons.explore_outlined),
+                          decoration: InputDecoration(
+                            labelText: strings.jobDirectionField,
+                            prefixIcon: const Icon(Icons.explore_outlined),
                           ),
                           items: directionOptions.entries
                               .map(
@@ -327,29 +329,29 @@ class _ImportRowEditSheetState extends State<_ImportRowEditSheet> {
                     ),
                     const SizedBox(height: 14),
                     _SheetSection(
-                      title: '补充信息',
+                      title: strings.extraSection,
                       children: [
                         TextField(
                           controller: city,
-                          decoration: const InputDecoration(
-                            labelText: '城市',
-                            prefixIcon: Icon(Icons.location_on_outlined),
+                          decoration: InputDecoration(
+                            labelText: strings.cityField,
+                            prefixIcon: const Icon(Icons.location_on_outlined),
                           ),
                         ),
                         const SizedBox(height: 12),
                         TextField(
                           controller: applyDate,
-                          decoration: const InputDecoration(
-                            labelText: '投递日期',
-                            prefixIcon: Icon(Icons.calendar_month_outlined),
+                          decoration: InputDecoration(
+                            labelText: strings.applyDateLabel,
+                            prefixIcon: const Icon(Icons.calendar_month_outlined),
                           ),
                         ),
                         const SizedBox(height: 12),
                         TextField(
                           controller: channel,
-                          decoration: const InputDecoration(
-                            labelText: '渠道',
-                            prefixIcon: Icon(Icons.public_outlined),
+                          decoration: InputDecoration(
+                            labelText: strings.channelField,
+                            prefixIcon: const Icon(Icons.public_outlined),
                           ),
                         ),
                         const SizedBox(height: 12),
@@ -357,9 +359,9 @@ class _ImportRowEditSheetState extends State<_ImportRowEditSheet> {
                           controller: remark,
                           minLines: 3,
                           maxLines: 5,
-                          decoration: const InputDecoration(
-                            labelText: '备注',
-                            prefixIcon: Icon(Icons.notes_outlined),
+                          decoration: InputDecoration(
+                            labelText: strings.remarkField,
+                            prefixIcon: const Icon(Icons.notes_outlined),
                             alignLabelWithHint: true,
                           ),
                         ),
@@ -374,7 +376,7 @@ class _ImportRowEditSheetState extends State<_ImportRowEditSheet> {
                   Expanded(
                     child: OutlinedButton(
                       onPressed: () => Navigator.pop(context),
-                      child: const Text('取消'),
+                      child: Text(strings.cancel),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -382,7 +384,7 @@ class _ImportRowEditSheetState extends State<_ImportRowEditSheet> {
                     child: FilledButton.icon(
                       onPressed: _save,
                       icon: const Icon(Icons.check),
-                      label: const Text('保存'),
+                      label: Text(strings.save),
                     ),
                   ),
                 ],

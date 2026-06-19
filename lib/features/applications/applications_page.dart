@@ -70,7 +70,7 @@ class _ApplicationsPageState extends State<ApplicationsPage> {
                 SizedBox(
                   width: 120,
                   child: Text(
-                    '已选择 ${selectedIds.length} 项',
+                    strings.selectedCount(selectedIds.length),
                     style: const TextStyle(fontWeight: FontWeight.w700),
                   ),
                 ),
@@ -83,14 +83,18 @@ class _ApplicationsPageState extends State<ApplicationsPage> {
                         ? Icons.remove_done_outlined
                         : Icons.done_all_outlined,
                   ),
-                  label: Text(_allVisibleSelected(records) ? '取消全选' : '全选'),
+                  label: Text(
+                    _allVisibleSelected(records)
+                        ? strings.deselectAll
+                        : strings.selectAll,
+                  ),
                 ),
                 FilledButton.icon(
                   onPressed: selectedIds.isEmpty
                       ? null
                       : () => _confirmBulkDelete(context, controller),
                   icon: const Icon(Icons.delete_outline),
-                  label: const Text('删除'),
+                  label: Text(strings.delete),
                 ),
               ],
             ),
@@ -212,11 +216,12 @@ class _ApplicationsPageState extends State<ApplicationsPage> {
     BuildContext context,
     AppController controller,
   ) async {
+    final strings = AppStrings(controller.language);
     final ok = await showAdaptiveConfirm(
       context,
-      title: '批量删除？',
-      content: '将删除 ${selectedIds.length} 条投递记录及其流程记录。',
-      confirmText: '删除',
+      title: strings.bulkDeleteTitle,
+      content: strings.bulkDeleteContent(selectedIds.length),
+      confirmText: strings.delete,
       destructive: true,
     );
     if (ok) {
@@ -248,6 +253,7 @@ class _ApplicationCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = AppScope.watch(context);
+    final strings = AppStrings(controller.language);
     return AppCard(
       child: InkWell(
         borderRadius: BorderRadius.circular(22),
@@ -335,14 +341,14 @@ class _ApplicationCard extends StatelessWidget {
                       children: [
                         StatusPill(
                           label: record.applyDate.isEmpty
-                              ? '投递日期未填'
+                              ? strings.applyDateMissing
                               : record.applyDate,
                           color: AppTheme.secondaryText,
                         ),
                         StatusPill(
                           label: record.nextFollowDate.isEmpty
-                              ? '待跟进'
-                              : '跟进 ${record.nextFollowDate}',
+                              ? strings.toFollowUp
+                              : strings.followUpOn(record.nextFollowDate),
                           color: record.nextFollowDate.isEmpty
                               ? AppTheme.warning
                               : AppTheme.primary,

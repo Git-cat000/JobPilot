@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/app_strings.dart';
 import '../../core/theme/app_theme.dart';
 import '../../shared/state/app_controller.dart';
 import '../../shared/widgets/adaptive.dart';
@@ -12,12 +13,13 @@ class ImportPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = AppScope.watch(context);
+    final strings = AppStrings(controller.language);
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
         AdaptiveTabHeader(
-          title: '导入',
-          subtitle: '先识别表头并预览结果，确认后才会写入数据库。',
+          title: strings.import,
+          subtitle: strings.importSubtitle,
         ),
         const SizedBox(height: 16),
         AppCard(
@@ -27,13 +29,13 @@ class ImportPage extends StatelessWidget {
               const Icon(Icons.table_chart_outlined, color: AppTheme.primary),
               const SizedBox(height: 12),
               Text(
-                '选择 CSV / XLSX 文件',
+                strings.chooseFileTitle,
                 style: Theme.of(
                   context,
                 ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
               ),
               const SizedBox(height: 8),
-              const Text('支持自动字段映射、状态识别、岗位方向识别和重复检测。'),
+              Text(strings.chooseFileHint),
               const SizedBox(height: 14),
               FilledButton.icon(
                 onPressed: () async {
@@ -47,23 +49,23 @@ class ImportPage extends StatelessWidget {
                   }
                 },
                 icon: const Icon(Icons.upload_file_outlined),
-                label: const Text('选择文件并预览'),
+                label: Text(strings.chooseFilePreview),
               ),
             ],
           ),
         ),
         const SizedBox(height: 16),
-        const SectionTitle('字段映射规则'),
+        SectionTitle(strings.fieldMappingTitle),
         const SizedBox(height: 10),
-        const AppCard(
+        AppCard(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('公司 / 企业 / 单位 -> company_name'),
-              SizedBox(height: 8),
-              Text('岗位 / 职位名称 -> job_title'),
-              SizedBox(height: 8),
-              Text('投递状态 / 流程 -> status'),
+              Text(strings.mappingCompany),
+              const SizedBox(height: 8),
+              Text(strings.mappingTitle),
+              const SizedBox(height: 8),
+              Text(strings.mappingStatus),
             ],
           ),
         ),

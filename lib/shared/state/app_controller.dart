@@ -4,8 +4,11 @@ import 'dart:io';
 import 'package:archive/archive_io.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/widgets.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path/path.dart' as p;
+import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/app_strings.dart';
 import '../../core/enums/job_enums.dart';
 import '../../data/db/app_database.dart';
 import '../../data/models/application_record.dart';
@@ -53,10 +56,32 @@ class AppController extends ChangeNotifier {
   ImportPreview? currentPreview;
   String message = '';
   bool isBusy = false;
+  String version = '1.2.0';
+
+  AppStrings get strings => AppStrings(language);
+
+  static const releasesUrl = 'https://github.com/Git-cat000/JobPilot/releases';
 
   Future<void> init() async {
     language = await appSettingsRepository.get('language', fallback: 'zh');
+    try {
+      final info = await PackageInfo.fromPlatform();
+      version = '${info.version}+${info.buildNumber}';
+    } catch (_) {
+      // 读取包信息失败时保留默认版本号，不影响其余初始化。
+    }
     await reload();
+  }
+
+  /// 仅在用户点击「检查更新」时打开 GitHub Releases 页面；
+  /// 不轮询、不调用更新 API、不添加后台网络行为。
+  Future<void> openUpdatesPage() async {
+    final uri = Uri.parse(releasesUrl);
+    final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!ok) {
+      message = strings.openUpdateFailed;
+      notifyListeners();
+    }
   }
 
   Future<void> reload() async {
@@ -84,13 +109,13 @@ class AppController extends ChangeNotifier {
 
   Future<void> saveApplication(ApplicationRecord record) async {
     await applicationRepository.upsert(record);
-    message = '已保存投递记录';
+    message = strings.savedApplication;
     await reload();
   }
 
   Future<void> deleteApplication(String id) async {
     await applicationRepository.delete(id);
-    message = '已删除投递记录';
+    message = strings.deletedApplication;
     await reload();
   }
 
@@ -98,7 +123,7 @@ class AppController extends ChangeNotifier {
     for (final id in ids) {
       await applicationRepository.delete(id);
     }
-    message = '已删除 ${ids.length} 条投递记录';
+    message = strings.deletedApplications(ids.length);
     await reload();
   }
 
@@ -151,19 +176,19 @@ class AppController extends ChangeNotifier {
 
   Future<void> saveStage(StageRecord stage) async {
     await stageRepository.upsert(stage);
-    message = '已保存流程记录';
+    message = strings.savedStage;
     await reload();
   }
 
   Future<void> deleteStage(String id) async {
     await stageRepository.delete(id);
-    message = '已删除流程记录';
+    message = strings.deletedStage;
     await reload();
   }
 
   Future<void> clearAll() async {
     await applicationRepository.clearAll();
-    message = '已清空本地数据';
+    message = strings.clearedAll;
     await reload();
   }
 
@@ -215,7 +240,7 @@ class AppController extends ChangeNotifier {
       ),
     );
     currentPreview = null;
-    message = '已导入 ${records.length} 条记录';
+    message = strings.importedRecords(records.length);
     await reload();
   }
 
@@ -274,7 +299,7 @@ class AppController extends ChangeNotifier {
     final sqliteFile = File(p.join(temp.path, 'data.sqlite'));
     sqliteFile.writeAsBytesSync(sqlite.first.content as List<int>);
     await AppDatabase.instance.replaceWith(sqliteFile);
-    message = '已恢复备份';
+    message = strings.restoredBackup;
     await reload();
   }
 }

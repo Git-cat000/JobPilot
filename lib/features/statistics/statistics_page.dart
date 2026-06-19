@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/app_strings.dart';
 import '../../core/enums/job_enums.dart';
 import '../../core/theme/app_theme.dart';
 import '../../shared/state/app_controller.dart';
@@ -12,22 +13,27 @@ class StatisticsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = AppScope.watch(context);
+    final strings = AppStrings(controller.language);
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        AdaptiveTabHeader(title: '统计'),
+        AdaptiveTabHeader(title: strings.statsTitle),
         const SizedBox(height: 16),
         AppCard(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SectionTitle('按状态统计'),
+              SectionTitle(strings.byStatus),
               const SizedBox(height: 12),
-              ...statusLabels.entries.map(
-                (entry) => _StatRow(
-                  label: entry.value,
+              ...statusLabels.keys.map(
+                (key) => _StatRow(
+                  label: statusLabel(
+                    key,
+                    language: controller.language,
+                    custom: controller.customStatuses,
+                  ),
                   value:
-                      '${controller.applications.where((item) => item.status == entry.key).length}',
+                      '${controller.applications.where((item) => item.status == key).length}',
                 ),
               ),
             ],
@@ -38,13 +44,17 @@ class StatisticsPage extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SectionTitle('按岗位方向统计'),
+              SectionTitle(strings.byDirection),
               const SizedBox(height: 12),
-              ...directionLabels.entries.map(
-                (entry) => _StatRow(
-                  label: entry.value,
+              ...directionLabels.keys.map(
+                (key) => _StatRow(
+                  label: directionLabel(
+                    key,
+                    language: controller.language,
+                    custom: controller.customDirections,
+                  ),
                   value:
-                      '${controller.applications.where((item) => item.jobDirection == entry.key).length}',
+                      '${controller.applications.where((item) => item.jobDirection == key).length}',
                 ),
               ),
             ],
@@ -55,9 +65,9 @@ class StatisticsPage extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SectionTitle('按投递渠道统计'),
+              SectionTitle(strings.byChannel),
               const SizedBox(height: 12),
-              ..._channelCounts(controller).entries.map(
+              ..._channelCounts(controller, strings).entries.map(
                 (entry) => _StatRow(label: entry.key, value: '${entry.value}'),
               ),
             ],
@@ -67,13 +77,13 @@ class StatisticsPage extends StatelessWidget {
     );
   }
 
-  Map<String, int> _channelCounts(AppController controller) {
+  Map<String, int> _channelCounts(AppController controller, AppStrings strings) {
     final counts = <String, int>{};
     for (final item in controller.applications) {
-      final key = item.channel.isEmpty ? '未填写' : item.channel;
+      final key = item.channel.isEmpty ? strings.unfilled : item.channel;
       counts[key] = (counts[key] ?? 0) + 1;
     }
-    return counts.isEmpty ? {'暂无数据': 0} : counts;
+    return counts.isEmpty ? {strings.noData: 0} : counts;
   }
 }
 

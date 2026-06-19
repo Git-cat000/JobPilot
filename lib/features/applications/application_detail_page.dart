@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/app_strings.dart';
 import '../../core/enums/job_enums.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/models/stage_record.dart';
@@ -16,6 +17,7 @@ class ApplicationDetailPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = AppScope.watch(context);
+    final strings = AppStrings(controller.language);
     final args = ModalRoute.of(context)?.settings.arguments;
     final id = args is String ? args : null;
     final record = controller.applications
@@ -24,14 +26,14 @@ class ApplicationDetailPage extends StatelessWidget {
 
     if (record == null) {
       return AdaptivePageScaffold(
-        title: '投递详情',
-        body: const Center(child: Text('记录不存在或已删除')),
+        title: strings.detailTitle,
+        body: Center(child: Text(strings.notFound)),
       );
     }
     final stages = controller.stagesFor(record.id);
 
     return AdaptivePageScaffold(
-      title: '投递详情',
+      title: strings.detailTitle,
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -47,7 +49,7 @@ class ApplicationDetailPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  '${record.jobTitle} · ${record.city.isEmpty ? '城市未填' : record.city}',
+                  '${record.jobTitle} · ${record.city.isEmpty ? strings.cityMissing : record.city}',
                 ),
                 const SizedBox(height: 12),
                 Wrap(
@@ -60,7 +62,7 @@ class ApplicationDetailPage extends StatelessWidget {
                         language: controller.language,
                         custom: controller.customStatuses,
                       ),
-                      color: AppTheme.primary,
+                      color: statusColor(record.status),
                     ),
                     StatusPill(
                       label: directionLabel(
@@ -71,7 +73,7 @@ class ApplicationDetailPage extends StatelessWidget {
                       color: AppTheme.success,
                     ),
                     StatusPill(
-                      label: '优先级 ${record.priority}',
+                      label: strings.priorityLabel(record.priority),
                       color: AppTheme.warning,
                     ),
                   ],
@@ -80,42 +82,42 @@ class ApplicationDetailPage extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          const SectionTitle('投递信息'),
+          SectionTitle(strings.applicationInfo),
           const SizedBox(height: 10),
           AppCard(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('渠道：${record.channel.isEmpty ? '未填写' : record.channel}'),
+                Text('${strings.channelLabel}：${record.channel.isEmpty ? strings.notFilled : record.channel}'),
                 const SizedBox(height: 8),
                 Text(
-                  '投递日期：${record.applyDate.isEmpty ? '未填写' : record.applyDate}',
+                  '${strings.applyDateLabel}：${record.applyDate.isEmpty ? strings.notFilled : record.applyDate}',
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  '下次跟进：${record.nextFollowDate.isEmpty ? '待定' : record.nextFollowDate}',
+                  '${strings.nextFollowLabel}：${record.nextFollowDate.isEmpty ? strings.pending : record.nextFollowDate}',
                 ),
                 const SizedBox(height: 8),
-                Text('JD 链接：${record.jdLink.isEmpty ? '未填写' : record.jdLink}'),
+                Text('${strings.jdLinkLabel}：${record.jdLink.isEmpty ? strings.notFilled : record.jdLink}'),
                 const SizedBox(height: 8),
                 Text(
-                  '简历版本：${record.resumeVersion.isEmpty ? '未填写' : record.resumeVersion}',
+                  '${strings.resumeVersionLabel}：${record.resumeVersion.isEmpty ? strings.notFilled : record.resumeVersion}',
                 ),
               ],
             ),
           ),
           const SizedBox(height: 16),
           SectionTitle(
-            '流程记录',
+            strings.stageRecords,
             action: TextButton.icon(
               onPressed: () => _showStageSheet(context, record.id),
               icon: const Icon(Icons.add),
-              label: const Text('添加流程'),
+              label: Text(strings.addStage),
             ),
           ),
           const SizedBox(height: 10),
           if (stages.isEmpty)
-            const AppCard(child: Text('还没有流程记录。可以添加笔试、面试、HR 沟通和复盘。'))
+            AppCard(child: Text(strings.noStages))
           else
             ...stages.map(
               (stage) => Padding(
@@ -127,10 +129,12 @@ class ApplicationDetailPage extends StatelessWidget {
                     subtitle: Text(
                       [
                         if (stage.stageTime.isNotEmpty) stage.stageTime,
-                        if (stage.questions.isNotEmpty) '问题：${stage.questions}',
-                        if (stage.review.isNotEmpty) '复盘：${stage.review}',
+                        if (stage.questions.isNotEmpty)
+                          strings.questionsLabel(stage.questions),
+                        if (stage.review.isNotEmpty)
+                          strings.reviewLabel(stage.review),
                         if (stage.nextAction.isNotEmpty)
-                          '下一步：${stage.nextAction}',
+                          strings.nextActionLabel(stage.nextAction),
                       ].join('\n'),
                     ),
                     trailing: IconButton(
@@ -142,9 +146,9 @@ class ApplicationDetailPage extends StatelessWidget {
               ),
             ),
           const SizedBox(height: 16),
-          const SectionTitle('备注'),
+          SectionTitle(strings.remarkTitle),
           const SizedBox(height: 10),
-          AppCard(child: Text(record.remark.isEmpty ? '暂无备注' : record.remark)),
+          AppCard(child: Text(record.remark.isEmpty ? strings.noRemark : record.remark)),
           const SizedBox(height: 20),
           Row(
             children: [
@@ -157,7 +161,7 @@ class ApplicationDetailPage extends StatelessWidget {
                     );
                   },
                   icon: const Icon(Icons.edit_outlined),
-                  label: const Text('编辑'),
+                  label: Text(strings.edit),
                 ),
               ),
               const SizedBox(width: 12),
@@ -165,7 +169,7 @@ class ApplicationDetailPage extends StatelessWidget {
                 child: OutlinedButton.icon(
                   onPressed: () => _confirmDelete(context, record.id),
                   icon: const Icon(Icons.delete_outline),
-                  label: const Text('删除'),
+                  label: Text(strings.delete),
                 ),
               ),
             ],
@@ -177,11 +181,12 @@ class ApplicationDetailPage extends StatelessWidget {
 
   Future<void> _confirmDelete(BuildContext context, String id) async {
     final controller = AppScope.watch(context);
+    final strings = AppStrings(controller.language);
     final ok = await showAdaptiveConfirm(
       context,
-      title: '删除投递记录？',
-      content: '删除后，该岗位关联的流程记录也会被删除。',
-      confirmText: '删除',
+      title: strings.deleteTitle,
+      content: strings.deleteContent,
+      confirmText: strings.delete,
       destructive: true,
     );
     if (ok) {
@@ -196,6 +201,8 @@ class ApplicationDetailPage extends StatelessWidget {
     BuildContext context,
     String applicationId,
   ) async {
+    final controller = AppScope.watch(context);
+    final strings = AppStrings(controller.language);
     final type = ValueNotifier(stageTypeLabels.first);
     final result = ValueNotifier(stageResultLabels.first);
     final time = TextEditingController();
@@ -219,7 +226,7 @@ class ApplicationDetailPage extends StatelessWidget {
             builder: (context, resultValue, _) => ListView(
               shrinkWrap: true,
               children: [
-                Text('添加流程', style: Theme.of(context).textTheme.titleLarge),
+                Text(strings.addStage, style: Theme.of(context).textTheme.titleLarge),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
                   initialValue: typeValue,
@@ -231,12 +238,12 @@ class ApplicationDetailPage extends StatelessWidget {
                       .toList(),
                   onChanged: (value) =>
                       type.value = value ?? stageTypeLabels.first,
-                  decoration: const InputDecoration(labelText: '流程类型'),
+                  decoration: InputDecoration(labelText: strings.stageTypeField),
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: time,
-                  decoration: const InputDecoration(labelText: '时间'),
+                  decoration: InputDecoration(labelText: strings.timeField),
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
@@ -249,27 +256,27 @@ class ApplicationDetailPage extends StatelessWidget {
                       .toList(),
                   onChanged: (value) =>
                       result.value = value ?? stageResultLabels.first,
-                  decoration: const InputDecoration(labelText: '结果'),
+                  decoration: InputDecoration(labelText: strings.resultField),
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: questions,
-                  decoration: const InputDecoration(labelText: '问题'),
+                  decoration: InputDecoration(labelText: strings.questionsField),
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: review,
-                  decoration: const InputDecoration(labelText: '复盘'),
+                  decoration: InputDecoration(labelText: strings.reviewField),
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: nextAction,
-                  decoration: const InputDecoration(labelText: '下一步行动'),
+                  decoration: InputDecoration(labelText: strings.nextActionField),
                 ),
                 const SizedBox(height: 16),
                 FilledButton(
                   onPressed: () async {
-                    await AppScope.watch(context).saveStage(
+                    await controller.saveStage(
                       StageRecord.create(
                         applicationId: applicationId,
                         stageType: type.value,
@@ -284,7 +291,7 @@ class ApplicationDetailPage extends StatelessWidget {
                       Navigator.pop(context);
                     }
                   },
-                  child: const Text('保存流程'),
+                  child: Text(strings.saveStage),
                 ),
               ],
             ),

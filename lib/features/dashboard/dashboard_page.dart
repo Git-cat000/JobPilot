@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/app_strings.dart';
 import '../../core/enums/job_enums.dart';
 import '../../core/theme/app_theme.dart';
 import '../../shared/state/app_controller.dart';
@@ -14,6 +15,7 @@ class DashboardPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = AppScope.watch(context);
+    final strings = AppStrings(controller.language);
     final total = controller.applications.length;
     final active = controller.applications
         .where((item) => !terminatedStatuses.contains(item.status))
@@ -40,15 +42,15 @@ class DashboardPage extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       children: [
         AdaptiveTabHeader(
-          title: 'JobPilot',
-          subtitle: controller.isBusy ? '正在加载本地数据' : '今天适合推进一个小步骤',
+          title: strings.appTitle,
+          subtitle: controller.isBusy ? strings.loadingLocalData : strings.todayTip,
           actions: [
             FilledButton.icon(
               onPressed: () {
                 Navigator.of(context).pushNamed(ApplicationEditPage.routeName);
               },
               icon: const Icon(Icons.add),
-              label: const Text('新增'),
+              label: Text(strings.add),
             ),
           ],
         ),
@@ -56,26 +58,26 @@ class DashboardPage extends StatelessWidget {
         AppCard(
           child: Row(
             children: [
-              _StatBlock(label: '总投递', value: '$total'),
-              _StatBlock(label: '进行中', value: '$active'),
-              _StatBlock(label: '面试中', value: '$interviewing'),
-              _StatBlock(label: 'Offer', value: '$offers'),
+              _StatBlock(label: strings.totalApplications, value: '$total'),
+              _StatBlock(label: strings.active, value: '$active'),
+              _StatBlock(label: strings.interviewing, value: '$interviewing'),
+              _StatBlock(label: strings.offerCount, value: '$offers'),
             ],
           ),
         ),
         const SizedBox(height: 16),
-        const SectionTitle('本周提醒'),
+        SectionTitle(strings.followUp),
         const SizedBox(height: 10),
         AppCard(
           child: followUps.isEmpty
-              ? const Row(
+              ? Row(
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.event_available_outlined,
                       color: AppTheme.primary,
                     ),
-                    SizedBox(width: 12),
-                    Expanded(child: Text('暂无待跟进岗位。添加投递后，这里会显示最近需要推进的机会。')),
+                    const SizedBox(width: 12),
+                    Expanded(child: Text(strings.noFollowUp)),
                   ],
                 )
               : Column(
@@ -91,7 +93,7 @@ class DashboardPage extends StatelessWidget {
                 ),
         ),
         const SizedBox(height: 16),
-        const SectionTitle('最近投递'),
+        SectionTitle(strings.recentApplications),
         const SizedBox(height: 10),
         if (controller.applications.isEmpty)
           AppCard(
@@ -99,13 +101,13 @@ class DashboardPage extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '还没有投递记录',
+                  strings.noApplicationsTitle,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w800,
                   ),
                 ),
                 const SizedBox(height: 6),
-                const Text('先新增一个目标岗位，或从表格导入已有记录。'),
+                Text(strings.noApplicationsHint),
               ],
             ),
           )
@@ -146,7 +148,7 @@ class DashboardPage extends StatelessWidget {
                               language: controller.language,
                               custom: controller.customStatuses,
                             ),
-                            color: AppTheme.primary,
+                            color: statusColor(item.status),
                           ),
                         ],
                       ),
