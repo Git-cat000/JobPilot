@@ -7,6 +7,7 @@ import '../../data/models/application_record.dart';
 import '../../shared/state/app_controller.dart';
 import '../../shared/widgets/adaptive.dart';
 import '../../shared/widgets/app_card.dart';
+import '../../shared/widgets/filter_picker.dart';
 import 'application_detail_page.dart';
 import 'application_edit_page.dart';
 
@@ -112,16 +113,16 @@ class _ApplicationsPageState extends State<ApplicationsPage> {
         Wrap(
           spacing: 8,
           runSpacing: 8,
+          crossAxisAlignment: WrapCrossAlignment.center,
           children: [
-            DropdownMenu<String>(
-              initialSelection: status,
-              onSelected: (value) => setState(() => status = value ?? 'all'),
-              dropdownMenuEntries: [
-                DropdownMenuEntry(value: 'all', label: strings.allStatus),
+            FilterPickerButton(
+              value: status,
+              options: [
+                ('all', strings.allStatus),
                 ...controller.statusOptions().entries.map(
-                  (entry) => DropdownMenuEntry(
-                    value: entry.key,
-                    label: statusLabel(
+                  (entry) => (
+                    entry.key,
+                    statusLabel(
                       entry.key,
                       language: controller.language,
                       custom: controller.customStatuses,
@@ -129,16 +130,16 @@ class _ApplicationsPageState extends State<ApplicationsPage> {
                   ),
                 ),
               ],
+              onChanged: (value) => setState(() => status = value),
             ),
-            DropdownMenu<String>(
-              initialSelection: direction,
-              onSelected: (value) => setState(() => direction = value ?? 'all'),
-              dropdownMenuEntries: [
-                DropdownMenuEntry(value: 'all', label: strings.allDirection),
+            FilterPickerButton(
+              value: direction,
+              options: [
+                ('all', strings.allDirection),
                 ...controller.directionOptions().entries.map(
-                  (entry) => DropdownMenuEntry(
-                    value: entry.key,
-                    label: directionLabel(
+                  (entry) => (
+                    entry.key,
+                    directionLabel(
                       entry.key,
                       language: controller.language,
                       custom: controller.customDirections,
@@ -146,7 +147,17 @@ class _ApplicationsPageState extends State<ApplicationsPage> {
                   ),
                 ),
               ],
+              onChanged: (value) => setState(() => direction = value),
             ),
+            if (status != 'all' || direction != 'all')
+              TextButton.icon(
+                onPressed: () => setState(() {
+                  status = 'all';
+                  direction = 'all';
+                }),
+                icon: const Icon(Icons.restart_alt_outlined, size: 18),
+                label: Text(strings.resetFilters),
+              ),
           ],
         ),
         const SizedBox(height: 16),
