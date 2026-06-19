@@ -1,3 +1,6 @@
+import 'dart:typed_data';
+
+import 'package:excel/excel.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:jobpilot_mobile/data/models/application_record.dart';
 import 'package:jobpilot_mobile/features/import_export/services/import_parser.dart';
@@ -71,4 +74,90 @@ void main() {
       expect(preview.rows.single.record.jobDirection, 'internet_dev');
     },
   );
+
+  test('robust xlsx parsing with mixed sheets and typed cells', () async {
+    final excel = Excel.createExcel();
+    final defaultSheet = excel.getDefaultSheet()!;
+    excel.rename(defaultSheet, '空表'); // 第一个 sheet 留空
+
+    final data = excel['数据']; // 第二个 sheet 才有真实数据
+    // 前置说明行（无映射数据）。
+    data.appendRow([TextCellValue('请按下列格式填写，不要修改表头')]);
+    // 装饰性双语表头。
+    data.appendRow([
+      TextCellValue('公司名称 (Company)'),
+      TextCellValue('岗位名称（必填）'),
+      TextCellValue('工作城市'),
+      TextCellValue('当前状态'),
+      TextCellValue('申请日期'),
+      TextCellValue('投递平台'),
+      TextCellValue('薪资'),
+      TextCellValue('备注'),
+      TextCellValue('应届'), // 未映射列，放布尔值验证不崩溃。
+    ]);
+    // 真实数据行：含日期 / 整数 / 布尔类型单元格。
+    data.appendRow([
+      TextCellValue('长鑫存储'),
+      TextCellValue('半导体算法工程师'),
+      TextCellValue('合肥'),
+      TextCellValue('已投'),
+      const DateCellValue(year: 2026, month: 6, day: 18),
+      TextCellValue('官网'),
+      const IntCellValue(25),
+      TextCellValue('CST'),
+      const BoolCellValue(true),
+    ]);
+    // 重复表头行，应被跳过。
+    data.appendRow([
+      TextCellValue('公司名称 (Company)'),
+      TextCellValue('岗位名称（必填）'),
+      TextCellValue('工作城市'),
+      TextCellValue('当前状态'),
+      TextCellValue('申请日期'),
+      TextCellValue('投递平台'),
+      TextCellValue('薪资'),
+      TextCellValue('备注'),
+      TextCellValue('应届'),
+    ]);
+    // 尾部空行，应被跳过。
+    data.appendRow(List<CellValue?>.filled(9, null));
+    // 第二条真实数据行。
+    data.appendRow([
+      TextCellValue('华为'),
+      TextCellValue('AI算法工程师'),
+      TextCellValue('深圳'),
+      TextCellValue('流程终止'),
+      const DateCellValue(year: 2026, month: 6, day: 15),
+      TextCellValue('内推'),
+      const IntCellValue(30),
+      TextCellValue('准备项目介绍'),
+      const BoolCellValue(false),
+    ]);
+
+    final bytes = Uint8List.fromList(excel.encode()!);
+    final preview = await ImportParser().parseXlsxBytes(
+      bytes,
+      fileName: 'mixed.xlsx',
+      existing: [],
+    );
+
+    expect(preview.totalRows, 2);
+    expect(preview.mapping.values, contains('company_name'));
+    expect(preview.mapping.values, contains('job_title'));
+    expect(preview.mapping.values, contains('status'));
+    expect(preview.mapping.values, contains('channel'));
+    expect(preview.mapping.values, contains('salary_range'));
+
+    final first = preview.rows[0].record;
+    expect(first.companyName, '长鑫存储');
+    expect(first.status, 'applied');
+    expect(first.applyDate, '2026-06-18');
+    expect(first.salaryRange, '25');
+
+    final second = preview.rows[1].record;
+    expect(second.companyName, '华为');
+    expect(second.status, 'process_terminated');
+    expect(second.applyDate, '2026-06-15');
+    expect(second.salaryRange, '30');
+  });
 }

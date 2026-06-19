@@ -104,10 +104,17 @@ class ImportParser {
     required List<ApplicationRecord> existing,
   }) async {
     final workbook = Excel.decodeBytes(bytes);
-    final firstSheetName = workbook.tables.keys.first;
-    final sheet = workbook.tables[firstSheetName]!;
-    final rows = sheet.rows.map((row) => row.map(_cellText).toList()).toList();
-    return _parseTable(fileName, rows, existing);
+    // 依次检查每个 sheet，选第一个含有可识别表头且至少一行数据的 sheet，
+    // 而不是盲目取第一个 sheet（它可能为空或仅作说明）。
+    for (final sheetName in workbook.tables.keys) {
+      final sheet = workbook.tables[sheetName]!;
+      final rows = sheet.rows.map((row) => row.map(_cellText).toList()).toList();
+      if (_detectHeaderRow(rows) == null) {
+        continue;
+      }
+      return _parseTable(fileName, rows, existing);
+    }
+    return ImportPreview(fileName: fileName, mapping: const {}, rows: const []);
   }
 
   ImportPreview _parseTable(
@@ -123,12 +130,24 @@ class ImportParser {
       );
     }
 
-    final headers = table.first.map((cell) => cell.toString()).toList();
+    // 统一转成字符串行，CSV 与 XLSX 走同一条「检测表头 → 解析数据」路径。
+    final rows = table
+        .map((row) => row.map((cell) => cell.toString()).toList())
+        .toList();
+    final headerIndex = _detectHeaderRow(rows);
+    if (headerIndex == null) {
+      return ImportPreview(fileName: fileName, mapping: const {}, rows: const []);
+    }
+    final headers = rows[headerIndex];
     final mapping = _buildMapping(headers);
     final previewRows = <ImportPreviewRow>[];
 
-    for (final row in table.skip(1)) {
-      if (row.every((cell) => cell.toString().trim().isEmpty)) {
+    for (final row in rows.skip(headerIndex + 1)) {
+      if (row.every((cell) => cell.trim().isEmpty)) {
+        continue;
+      }
+      // 跳过重复表头行：整行单元格再次命中表头别名（含公司+岗位）。
+      if (_isHeaderCandidate(row)) {
         continue;
       }
       final values = <String, String>{};
@@ -137,7 +156,7 @@ class ImportParser {
         if (key == null || index >= row.length) {
           continue;
         }
-        values[key] = row[index].toString().trim();
+        values[key] = row[index].trim();
       }
 
       final statusText = values['status'] ?? '';
@@ -185,6 +204,43 @@ class ImportParser {
       mapping: mapping,
       rows: previewRows,
     );
+  }
+
+  /// 在前若干行中搜索最佳表头行：要求同时覆盖 company_name 与 job_title，
+  /// 返回第一个满足条件的行号；找不到返回 null。
+  int? _detectHeaderRow(List<List<String>> rows) {
+    final limit = rows.length < 20 ? rows.length : 20;
+    for (var i = 0; i < limit; i++) {
+      final keys = _mappedKeys(rows[i]);
+      if (keys.contains('company_name') && keys.contains('job_title')) {
+        return i;
+      }
+    }
+    return null;
+  }
+
+  /// 某行是否本身就是一个表头候选（用于跳过重复表头行）。
+  bool _isHeaderCandidate(List<dynamic> row) {
+    final keys = _mappedKeys(row.map((cell) => cell.toString()).toList());
+    return keys.contains('company_name') && keys.contains('job_title');
+  }
+
+  /// 计算一行单元格能命中的别名 key 集合（按规范化后整串匹配）。
+  Set<String> _mappedKeys(List<String> cells) {
+    final keys = <String>{};
+    for (final cell in cells) {
+      final normalized = _normalizeHeader(cell);
+      if (normalized.isEmpty) {
+        continue;
+      }
+      for (final entry in aliases.entries) {
+        if (entry.value.map(_normalizeHeader).contains(normalized)) {
+          keys.add(entry.key);
+          break;
+        }
+      }
+    }
+    return keys;
   }
 
   Map<String, String> _buildMapping(List<String> headers) {
@@ -241,10 +297,36 @@ class ImportParser {
       return '';
     }
     if (value is TextCellValue) {
-      return value.value.text ?? '';
+      // TextSpan 可能带 children（富文本），用 toString 合并全部文本。
+      return value.value.toString();
     }
     if (value is DateCellValue) {
       return value.asDateTimeLocal().toIso8601String().split('T').first;
+    }
+    if (value is DateTimeCellValue) {
+      return value.asDateTimeLocal().toIso8601String().split('T').first;
+    }
+    if (value is TimeCellValue) {
+      return value.toString();
+    }
+    if (value is IntCellValue) {
+      return value.value.toString();
+    }
+    if (value is DoubleCellValue) {
+      return _doubleToString(value.value);
+    }
+    if (value is BoolCellValue) {
+      return value.value ? 'true' : 'false';
+    }
+    if (value is FormulaCellValue) {
+      return value.formula;
+    }
+    return value.toString();
+  }
+
+  String _doubleToString(double value) {
+    if (value == value.roundToDouble()) {
+      return value.round().toString();
     }
     return value.toString();
   }
