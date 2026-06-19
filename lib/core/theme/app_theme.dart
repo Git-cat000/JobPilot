@@ -1,6 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 
+/// 集中的状态颜色选择：所有展示状态色的页面都应走这里，避免散落 switch。
+/// process_terminated / rejected / abandoned 共用 danger 色。
+Color statusColor(String status) {
+  return switch (status) {
+    'offer' || 'signed' => AppTheme.success,
+    'rejected' || 'abandoned' || 'process_terminated' => AppTheme.danger,
+    'written_test' ||
+    'first_interview' ||
+    'second_interview' ||
+    'final_interview' ||
+    'hr_interview' =>
+      AppTheme.warning,
+    _ => AppTheme.primary,
+  };
+}
+
+/// 终结类状态：用于统计「进行中」口径——offer/已签约/拒绝/放弃/流程终止 不计入进行中。
+const terminatedStatuses = [
+  'offer',
+  'signed',
+  'rejected',
+  'abandoned',
+  'process_terminated',
+];
+
 class AppTheme {
   static const background = Color(0xFFF6F7F9);
   static const primary = Color(0xFF2563EB);

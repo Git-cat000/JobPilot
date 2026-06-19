@@ -16,9 +16,7 @@ class DashboardPage extends StatelessWidget {
     final controller = AppScope.watch(context);
     final total = controller.applications.length;
     final active = controller.applications
-        .where(
-          (item) => !['offer', 'rejected', 'abandoned'].contains(item.status),
-        )
+        .where((item) => !terminatedStatuses.contains(item.status))
         .length;
     final interviewing = controller.applications
         .where(

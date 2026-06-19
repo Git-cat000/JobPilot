@@ -359,18 +359,7 @@ class _ApplicationCard extends StatelessWidget {
     );
   }
 
-  Color _statusColor(String status) {
-    return switch (status) {
-      'offer' || 'signed' => AppTheme.success,
-      'rejected' || 'abandoned' => AppTheme.danger,
-      'written_test' ||
-      'first_interview' ||
-      'second_interview' ||
-      'final_interview' ||
-      'hr_interview' => AppTheme.warning,
-      _ => AppTheme.primary,
-    };
-  }
+  Color _statusColor(String status) => statusColor(status);
 
   Color _priorityColor(String priority) {
     return switch (priority) {

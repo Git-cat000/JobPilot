@@ -12,6 +12,7 @@ const statusLabels = {
   'signed': '已签约',
   'rejected': '拒绝',
   'abandoned': '放弃',
+  'process_terminated': '流程终止',
   'paused': '暂停',
 };
 
@@ -29,6 +30,7 @@ const statusLabelsEn = {
   'signed': 'Signed',
   'rejected': 'Rejected',
   'abandoned': 'Abandoned',
+  'process_terminated': 'Process terminated',
   'paused': 'Paused',
 };
 
