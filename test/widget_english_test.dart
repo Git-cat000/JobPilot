@@ -4,6 +4,7 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import 'package:jobpilot_mobile/main.dart';
 import 'package:jobpilot_mobile/shared/state/app_controller.dart';
+import 'package:jobpilot_mobile/shared/state/app_controller_contract.dart';
 
 void main() {
   setUpAll(() {

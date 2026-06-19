@@ -14,6 +14,7 @@ class FilterPickerButton extends StatelessWidget {
     super.key,
     required this.value,
     required this.options,
+    this.cancelText = '取消',
     required this.onChanged,
   });
 
@@ -25,6 +26,9 @@ class FilterPickerButton extends StatelessWidget {
 
   /// 选择回调。
   final ValueChanged<String> onChanged;
+
+  /// iOS action sheet cancel label.
+  final String cancelText;
 
   bool get _isActive => value != allValue;
 
@@ -49,6 +53,7 @@ class FilterPickerButton extends StatelessWidget {
             context,
             value: value,
             options: options,
+            cancelText: cancelText,
           );
           if (selected != null) onChanged(selected);
         },
@@ -115,6 +120,7 @@ Future<T?> showAdaptiveFilterPicker<T>(
   BuildContext context, {
   required T value,
   required List<(T, String)> options,
+  String cancelText = '取消',
 }) async {
   if (isIos) {
     return showCupertinoModalPopup<T>(
@@ -130,7 +136,7 @@ Future<T?> showAdaptiveFilterPicker<T>(
         cancelButton: CupertinoActionSheetAction(
           isDefaultAction: true,
           onPressed: () => Navigator.pop(ctx),
-          child: const Text('取消'),
+          child: Text(cancelText),
         ),
       ),
     );

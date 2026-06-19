@@ -4,7 +4,7 @@ import '../../core/app_strings.dart';
 import '../../core/enums/job_enums.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/models/application_record.dart';
-import '../../shared/state/app_controller.dart';
+import '../../shared/state/app_controller_contract.dart';
 import '../../shared/widgets/adaptive.dart';
 import '../../shared/widgets/app_card.dart';
 import 'services/import_parser.dart';
@@ -87,7 +87,9 @@ class ImportPreviewPage extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     StatusPill(
-                      label: entry.value.status.label,
+                      label: strings.importRowStatusLabel(
+                        entry.value.status.name,
+                      ),
                       color: _statusColor(entry.value.status),
                     ),
                   ],
@@ -112,6 +114,7 @@ class ImportPreviewPage extends StatelessWidget {
                       context,
                       title: strings.confirmImportTitle,
                       content: strings.confirmImportContent(preview.importableRows),
+                      cancelText: strings.cancel,
                       confirmText: strings.confirm,
                     );
                     if (ok) {
@@ -143,7 +146,7 @@ class ImportPreviewPage extends StatelessWidget {
 
   Future<void> _editRow(
     BuildContext context,
-    AppController controller,
+    AppControllerContract controller,
     int index,
     ApplicationRecord record,
   ) async {
@@ -164,7 +167,7 @@ class _ImportRowEditSheet extends StatefulWidget {
   const _ImportRowEditSheet({required this.record, required this.controller});
 
   final ApplicationRecord record;
-  final AppController controller;
+  final AppControllerContract controller;
 
   @override
   State<_ImportRowEditSheet> createState() => _ImportRowEditSheetState();

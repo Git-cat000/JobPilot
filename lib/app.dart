@@ -10,7 +10,8 @@ import 'features/dashboard/dashboard_page.dart';
 import 'features/import_export/import_page.dart';
 import 'features/statistics/statistics_page.dart';
 import 'features/settings/settings_page.dart';
-import 'shared/state/app_controller.dart';
+import 'shared/state/app_controller_contract.dart';
+import 'shared/state/controller_factory.dart';
 import 'shared/widgets/adaptive.dart';
 
 class MyApp extends StatefulWidget {
@@ -21,12 +22,13 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  late final AppController controller;
+  late final AppControllerContract controller;
 
   @override
   void initState() {
     super.initState();
-    controller = AppController()..init();
+    // 通过条件导入选择原生 SQLite 控制器或 Web 只读演示控制器；init 已在工厂内启动。
+    controller = createAppController();
   }
 
   @override

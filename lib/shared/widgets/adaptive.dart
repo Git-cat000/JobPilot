@@ -1,13 +1,12 @@
-import 'dart:io';
-
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/theme/app_theme.dart';
 
 /// 当前平台是否为 iOS。所有 iOS 化分支都以此为开关，
-/// 安卓端（含测试宿主 Windows/macOS）始终走 Material 原路径，行为不变。
-bool get isIos => Platform.isIOS;
+/// 安卓端（含测试宿主 Windows/macOS）与 Web 始终走 Material 原路径，行为不变。
+bool get isIos => !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
 
 /// 顶部大标题头部：用于五个 Tab 页。
 ///

@@ -3,7 +3,6 @@ import 'dart:io';
 
 import 'package:archive/archive_io.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:flutter/widgets.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path/path.dart' as p;
 import 'package:url_launcher/url_launcher.dart';
@@ -22,8 +21,9 @@ import '../../data/repositories/import_log_repository.dart';
 import '../../data/repositories/stage_repository.dart';
 import '../../features/import_export/services/import_parser.dart';
 import '../../features/settings/services/export_service.dart';
+import 'app_controller_contract.dart';
 
-class AppController extends ChangeNotifier {
+class AppController extends AppControllerContract {
   AppController({
     ApplicationRepository? applicationRepository,
     StageRepository? stageRepository,
@@ -48,33 +48,59 @@ class AppController extends ChangeNotifier {
   final ImportParser importParser;
   final ExportService exportService;
 
+  @override
   var applications = <ApplicationRecord>[];
   var stages = <StageRecord>[];
+  @override
   var customStatuses = <String, String>{};
+  @override
   var customDirections = <String, String>{};
+  @override
   String language = 'zh';
+  @override
   ImportPreview? currentPreview;
+  @override
   String message = '';
+  @override
   bool isBusy = false;
-  String version = '1.2.0';
+  @override
+  String version = '1.2.0+3';
 
+  @override
+  bool get isDemo => false;
+
+  @override
   AppStrings get strings => AppStrings(language);
 
   static const releasesUrl = 'https://github.com/Git-cat000/JobPilot/releases';
 
+  @override
   Future<void> init() async {
     language = await appSettingsRepository.get('language', fallback: 'zh');
     try {
       final info = await PackageInfo.fromPlatform();
-      version = '${info.version}+${info.buildNumber}';
+      version = _formatPackageVersion(info);
     } catch (_) {
       // 读取包信息失败时保留默认版本号，不影响其余初始化。
     }
     await reload();
   }
 
+  /// 将 [PackageInfo.version] 与 [PackageInfo.buildNumber] 拼接为
+  /// "语义化版本+构建号" 格式（如 "1.2.0+3"）。
+  /// 如果 [PackageInfo.version] 意外已含 "+"，则以 "+" 左侧部分为准，
+  /// 避免重复出现 "+"。
+  static String _formatPackageVersion(PackageInfo info) {
+    if (info.buildNumber.trim().isEmpty) return info.version;
+    final base = info.version.contains('+')
+        ? info.version.split('+').first
+        : info.version;
+    return '$base+${info.buildNumber}';
+  }
+
   /// 仅在用户点击「检查更新」时打开 GitHub Releases 页面；
   /// 不轮询、不调用更新 API、不添加后台网络行为。
+  @override
   Future<void> openUpdatesPage() async {
     final uri = Uri.parse(releasesUrl);
     final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
@@ -101,24 +127,28 @@ class AppController extends ChangeNotifier {
     notifyListeners();
   }
 
+  @override
   List<StageRecord> stagesFor(String applicationId) {
     return stages
         .where((stage) => stage.applicationId == applicationId)
         .toList();
   }
 
+  @override
   Future<void> saveApplication(ApplicationRecord record) async {
     await applicationRepository.upsert(record);
     message = strings.savedApplication;
     await reload();
   }
 
+  @override
   Future<void> deleteApplication(String id) async {
     await applicationRepository.delete(id);
     message = strings.deletedApplication;
     await reload();
   }
 
+  @override
   Future<void> deleteApplications(Iterable<String> ids) async {
     for (final id in ids) {
       await applicationRepository.delete(id);
@@ -127,6 +157,7 @@ class AppController extends ChangeNotifier {
     await reload();
   }
 
+  @override
   Future<String> addCustomStatus(String label) async {
     final value = 'custom_status_${DateTime.now().millisecondsSinceEpoch}';
     await appOptionRepository.add(
@@ -136,6 +167,7 @@ class AppController extends ChangeNotifier {
     return value;
   }
 
+  @override
   Future<String> addCustomDirection(String label) async {
     final value = 'custom_direction_${DateTime.now().millisecondsSinceEpoch}';
     await appOptionRepository.add(
@@ -145,6 +177,7 @@ class AppController extends ChangeNotifier {
     return value;
   }
 
+  @override
   Future<void> deleteCustomStatus(String value) async {
     if (!customStatuses.containsKey(value)) {
       return;
@@ -153,6 +186,7 @@ class AppController extends ChangeNotifier {
     await reload();
   }
 
+  @override
   Future<void> deleteCustomDirection(String value) async {
     if (!customDirections.containsKey(value)) {
       return;
@@ -161,37 +195,44 @@ class AppController extends ChangeNotifier {
     await reload();
   }
 
+  @override
   Future<void> setLanguage(String value) async {
     language = value;
     await appSettingsRepository.set('language', value);
     notifyListeners();
   }
 
+  @override
   Map<String, String> statusOptions() => {...statusLabels, ...customStatuses};
 
+  @override
   Map<String, String> directionOptions() => {
     ...directionLabels,
     ...customDirections,
   };
 
+  @override
   Future<void> saveStage(StageRecord stage) async {
     await stageRepository.upsert(stage);
     message = strings.savedStage;
     await reload();
   }
 
+  @override
   Future<void> deleteStage(String id) async {
     await stageRepository.delete(id);
     message = strings.deletedStage;
     await reload();
   }
 
+  @override
   Future<void> clearAll() async {
     await applicationRepository.clearAll();
     message = strings.clearedAll;
     await reload();
   }
 
+  @override
   Future<ImportPreview?> pickAndPreviewImport() async {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
@@ -219,6 +260,7 @@ class AppController extends ChangeNotifier {
     return currentPreview;
   }
 
+  @override
   Future<void> confirmImport() async {
     final preview = currentPreview;
     if (preview == null) {
@@ -244,6 +286,7 @@ class AppController extends ChangeNotifier {
     await reload();
   }
 
+  @override
   void updatePreviewRecord(int index, ApplicationRecord record) {
     final preview = currentPreview;
     if (preview == null || index < 0 || index >= preview.rows.length) {
@@ -266,19 +309,24 @@ class AppController extends ChangeNotifier {
     notifyListeners();
   }
 
+  @override
   Future<File> exportCsv() => exportService.exportCsv(applications);
 
+  @override
   Future<File> exportXlsx() => exportService.exportXlsx(applications);
 
+  @override
   Future<File> exportJobpack() async {
     final databasePath = await AppDatabase.instance.databasePath;
     return exportService.exportJobpack(
       databasePath: databasePath,
       applicationCount: applications.length,
       stageCount: stages.length,
+      appVersion: version,
     );
   }
 
+  @override
   Future<void> importJobpack() async {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
@@ -301,19 +349,5 @@ class AppController extends ChangeNotifier {
     await AppDatabase.instance.replaceWith(sqliteFile);
     message = strings.restoredBackup;
     await reload();
-  }
-}
-
-class AppScope extends InheritedNotifier<AppController> {
-  const AppScope({
-    super.key,
-    required AppController controller,
-    required super.child,
-  }) : super(notifier: controller);
-
-  static AppController watch(BuildContext context) {
-    final scope = context.dependOnInheritedWidgetOfExactType<AppScope>();
-    assert(scope != null, 'AppScope not found');
-    return scope!.notifier!;
   }
 }

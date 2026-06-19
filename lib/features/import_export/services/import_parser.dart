@@ -109,7 +109,15 @@ class ImportParser {
     for (final sheetName in workbook.tables.keys) {
       final sheet = workbook.tables[sheetName]!;
       final rows = sheet.rows.map((row) => row.map(_cellText).toList()).toList();
-      if (_detectHeaderRow(rows) == null) {
+      final headerIndex = _detectHeaderRow(rows);
+      if (headerIndex == null) {
+        continue;
+      }
+      // 跳过只有表头没有数据行的 sheet。
+      final dataRows = rows.skip(headerIndex + 1).where(
+        (row) => row.any((cell) => cell.toString().trim().isNotEmpty),
+      );
+      if (dataRows.isEmpty) {
         continue;
       }
       return _parseTable(fileName, rows, existing);

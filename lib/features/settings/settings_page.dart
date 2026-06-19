@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/app_strings.dart';
 import '../../core/theme/app_theme.dart';
-import '../../shared/state/app_controller.dart';
+import '../../shared/state/app_controller_contract.dart';
 import '../../shared/widgets/adaptive.dart';
 import '../../shared/widgets/app_card.dart';
 
@@ -13,11 +13,20 @@ class SettingsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final controller = AppScope.watch(context);
     final strings = AppStrings(controller.language);
+    final demo = controller.isDemo;
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
         AdaptiveTabHeader(title: strings.settings),
         const SizedBox(height: 16),
+        if (demo)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: Text(
+              strings.demoNotice,
+              style: const TextStyle(color: AppTheme.secondaryText),
+            ),
+          ),
         AppCard(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -36,22 +45,27 @@ class SettingsPage extends StatelessWidget {
               _SettingsAction(
                 icon: Icons.file_download_outlined,
                 label: strings.exportCsv,
-                onTap: () => _export(context, controller.exportCsv()),
+                onTap:
+                    demo ? null : () => _export(context, controller.exportCsv()),
               ),
               _SettingsAction(
                 icon: Icons.grid_on_outlined,
                 label: strings.exportXlsx,
-                onTap: () => _export(context, controller.exportXlsx()),
+                onTap:
+                    demo ? null : () => _export(context, controller.exportXlsx()),
               ),
               _SettingsAction(
                 icon: Icons.inventory_2_outlined,
                 label: strings.exportJobpack,
-                onTap: () => _export(context, controller.exportJobpack()),
+                onTap:
+                    demo
+                        ? null
+                        : () => _export(context, controller.exportJobpack()),
               ),
               _SettingsAction(
                 icon: Icons.restore_outlined,
                 label: strings.importJobpack,
-                onTap: () => _confirmRestore(context, controller),
+                onTap: demo ? null : () => _confirmRestore(context, controller),
               ),
               _SettingsAction(
                 icon: Icons.system_update_outlined,
@@ -71,7 +85,8 @@ class SettingsPage extends StatelessWidget {
               Text(strings.localDataDesc),
               const SizedBox(height: 12),
               OutlinedButton.icon(
-                onPressed: () => _confirmClear(context, controller),
+                onPressed:
+                    demo ? null : () => _confirmClear(context, controller),
                 icon: const Icon(Icons.delete_forever_outlined),
                 label: Text(strings.clearAll),
               ),
@@ -102,13 +117,14 @@ class SettingsPage extends StatelessWidget {
 
   Future<void> _confirmClear(
     BuildContext context,
-    AppController controller,
+    AppControllerContract controller,
   ) async {
     final strings = AppStrings(controller.language);
     final ok = await showAdaptiveConfirm(
       context,
       title: strings.clearAllTitle,
       content: strings.clearAllContent,
+      cancelText: strings.cancel,
       confirmText: strings.clearAction,
       destructive: true,
     );
@@ -119,13 +135,14 @@ class SettingsPage extends StatelessWidget {
 
   Future<void> _confirmRestore(
     BuildContext context,
-    AppController controller,
+    AppControllerContract controller,
   ) async {
     final strings = AppStrings(controller.language);
     final ok = await showAdaptiveConfirm(
       context,
       title: strings.restoreTitle,
       content: strings.restoreContent,
+      cancelText: strings.cancel,
       confirmText: strings.restoreAction,
     );
     if (ok) {
@@ -143,14 +160,23 @@ class _SettingsAction extends StatelessWidget {
 
   final IconData icon;
   final String label;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
+    final enabled = onTap != null;
     return ListTile(
       contentPadding: EdgeInsets.zero,
-      leading: Icon(icon, color: AppTheme.primary),
-      title: Text(label),
+      leading: Icon(
+        icon,
+        color: enabled ? AppTheme.primary : AppTheme.secondaryText,
+      ),
+      title: Text(
+        label,
+        style: TextStyle(
+          color: enabled ? AppTheme.text : AppTheme.secondaryText,
+        ),
+      ),
       trailing: const Icon(Icons.chevron_right),
       onTap: onTap,
     );

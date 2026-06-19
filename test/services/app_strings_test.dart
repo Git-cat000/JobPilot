@@ -97,5 +97,33 @@ void main() {
       expect(zh.statistics, '统计');
       expect(zh.settings, '设置');
     });
+
+    test('stage type and result labels', () {
+      expect(en.stageTypeLabel('一面'), 'First round');
+      expect(en.stageTypeLabel('笔试'), 'Written test');
+      expect(en.stageTypeLabel('HR 面'), 'HR round');
+      expect(en.stageResultLabel('通过'), 'Passed');
+      expect(en.stageResultLabel('待反馈'), 'Pending');
+      // Chinese fallback: passthrough unchanged values
+      final zh = AppStrings('zh');
+      expect(zh.stageTypeLabel('一面'), '一面');
+      expect(zh.stageResultLabel('通过'), '通过');
+      // Unknown value passthrough
+      expect(en.stageTypeLabel('未知'), '未知');
+    });
+
+    test('import row status labels', () {
+      expect(en.importRowStatusLabel('importable'), 'Importable');
+      expect(en.importRowStatusLabel('missingRequired'), 'Missing required fields');
+      expect(en.importRowStatusLabel('suspectedDuplicate'), 'Suspected duplicate');
+      expect(en.importRowStatusLabel('possibleDuplicate'), 'Possible duplicate');
+      expect(en.importRowStatusLabel('invalidField'), 'Invalid field');
+      // Chinese fallback
+      final zh = AppStrings('zh');
+      expect(zh.importRowStatusLabel('importable'), '可导入');
+      expect(zh.importRowStatusLabel('missingRequired'), '缺少必填字段');
+      // Unknown key passthrough
+      expect(en.importRowStatusLabel('unknown_key'), 'unknown_key');
+    });
   });
 }

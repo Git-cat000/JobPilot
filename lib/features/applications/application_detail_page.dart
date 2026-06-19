@@ -4,7 +4,7 @@ import '../../core/app_strings.dart';
 import '../../core/enums/job_enums.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/models/stage_record.dart';
-import '../../shared/state/app_controller.dart';
+import '../../shared/state/app_controller_contract.dart';
 import '../../shared/widgets/adaptive.dart';
 import '../../shared/widgets/app_card.dart';
 import 'application_edit_page.dart';
@@ -31,6 +31,7 @@ class ApplicationDetailPage extends StatelessWidget {
       );
     }
     final stages = controller.stagesFor(record.id);
+    final demo = controller.isDemo;
 
     return AdaptivePageScaffold(
       title: strings.detailTitle,
@@ -109,11 +110,13 @@ class ApplicationDetailPage extends StatelessWidget {
           const SizedBox(height: 16),
           SectionTitle(
             strings.stageRecords,
-            action: TextButton.icon(
-              onPressed: () => _showStageSheet(context, record.id),
-              icon: const Icon(Icons.add),
-              label: Text(strings.addStage),
-            ),
+            action: demo
+                ? null
+                : TextButton.icon(
+                    onPressed: () => _showStageSheet(context, record.id),
+                    icon: const Icon(Icons.add),
+                    label: Text(strings.addStage),
+                  ),
           ),
           const SizedBox(height: 10),
           if (stages.isEmpty)
@@ -137,10 +140,12 @@ class ApplicationDetailPage extends StatelessWidget {
                           strings.nextActionLabel(stage.nextAction),
                       ].join('\n'),
                     ),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.delete_outline),
-                      onPressed: () => controller.deleteStage(stage.id),
-                    ),
+                    trailing: demo
+                        ? null
+                        : IconButton(
+                            icon: const Icon(Icons.delete_outline),
+                            onPressed: () => controller.deleteStage(stage.id),
+                          ),
                   ),
                 ),
               ),
@@ -150,30 +155,31 @@ class ApplicationDetailPage extends StatelessWidget {
           const SizedBox(height: 10),
           AppCard(child: Text(record.remark.isEmpty ? strings.noRemark : record.remark)),
           const SizedBox(height: 20),
-          Row(
-            children: [
-              Expanded(
-                child: FilledButton.icon(
-                  onPressed: () {
-                    Navigator.of(context).pushNamed(
-                      ApplicationEditPage.routeName,
-                      arguments: record.id,
-                    );
-                  },
-                  icon: const Icon(Icons.edit_outlined),
-                  label: Text(strings.edit),
+          if (!demo)
+            Row(
+              children: [
+                Expanded(
+                  child: FilledButton.icon(
+                    onPressed: () {
+                      Navigator.of(context).pushNamed(
+                        ApplicationEditPage.routeName,
+                        arguments: record.id,
+                      );
+                    },
+                    icon: const Icon(Icons.edit_outlined),
+                    label: Text(strings.edit),
+                  ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () => _confirmDelete(context, record.id),
-                  icon: const Icon(Icons.delete_outline),
-                  label: Text(strings.delete),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => _confirmDelete(context, record.id),
+                    icon: const Icon(Icons.delete_outline),
+                    label: Text(strings.delete),
+                  ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            ),
         ],
       ),
     );
@@ -186,6 +192,7 @@ class ApplicationDetailPage extends StatelessWidget {
       context,
       title: strings.deleteTitle,
       content: strings.deleteContent,
+      cancelText: strings.cancel,
       confirmText: strings.delete,
       destructive: true,
     );
@@ -232,8 +239,10 @@ class ApplicationDetailPage extends StatelessWidget {
                   initialValue: typeValue,
                   items: stageTypeLabels
                       .map(
-                        (item) =>
-                            DropdownMenuItem(value: item, child: Text(item)),
+                        (item) => DropdownMenuItem(
+                          value: item,
+                          child: Text(strings.stageTypeLabel(item)),
+                        ),
                       )
                       .toList(),
                   onChanged: (value) =>
@@ -250,8 +259,10 @@ class ApplicationDetailPage extends StatelessWidget {
                   initialValue: resultValue,
                   items: stageResultLabels
                       .map(
-                        (item) =>
-                            DropdownMenuItem(value: item, child: Text(item)),
+                        (item) => DropdownMenuItem(
+                          value: item,
+                          child: Text(strings.stageResultLabel(item)),
+                        ),
                       )
                       .toList(),
                   onChanged: (value) =>

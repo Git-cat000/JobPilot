@@ -1,0 +1,43 @@
+name: iOS Simulator Build
+
+# Builds an unsigned iOS simulator Runner.app ZIP artifact only.
+# This is not a signed IPA, cannot be installed on a real device, and needs no
+# Apple signing certificates, provisioning profiles, or repository secrets.
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths:
+      - 'lib/**'
+      - 'ios/**'
+      - 'pubspec.yaml'
+      - '.github/workflows/ios-simulator-build.yml'
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.x'
+          cache: true
+
+      - run: flutter pub get
+      - run: flutter analyze
+
+      - name: Build unsigned iOS simulator app
+        run: flutter build ios --debug --no-codesign --simulator
+
+      - name: Package Runner.app simulator artifact
+        run: |
+          cd build/ios/iphonesimulator
+          zip -ry Runner-simulator.zip Runner.app
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Runner-simulator
+          path: build/ios/iphonesimulator/Runner-simulator.zip
+          retention-days: 14

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/app_strings.dart';
 import '../../core/theme/app_theme.dart';
-import '../../shared/state/app_controller.dart';
+import '../../shared/state/app_controller_contract.dart';
 import '../../shared/widgets/adaptive.dart';
 import '../../shared/widgets/app_card.dart';
 import 'import_preview_page.dart';
@@ -37,20 +37,26 @@ class ImportPage extends StatelessWidget {
               const SizedBox(height: 8),
               Text(strings.chooseFileHint),
               const SizedBox(height: 14),
-              FilledButton.icon(
-                onPressed: () async {
-                  final preview = await controller.pickAndPreviewImport();
-                  if (preview != null && context.mounted) {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => const ImportPreviewPage(),
-                      ),
-                    );
-                  }
-                },
-                icon: const Icon(Icons.upload_file_outlined),
-                label: Text(strings.chooseFilePreview),
-              ),
+              if (controller.isDemo)
+                Text(
+                  strings.demoNotice,
+                  style: const TextStyle(color: AppTheme.secondaryText),
+                )
+              else
+                FilledButton.icon(
+                  onPressed: () async {
+                    final preview = await controller.pickAndPreviewImport();
+                    if (preview != null && context.mounted) {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const ImportPreviewPage(),
+                        ),
+                      );
+                    }
+                  },
+                  icon: const Icon(Icons.upload_file_outlined),
+                  label: Text(strings.chooseFilePreview),
+                ),
             ],
           ),
         ),

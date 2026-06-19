@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/enums/job_enums.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/models/application_record.dart';
-import '../../shared/state/app_controller.dart';
+import '../../shared/state/app_controller_contract.dart';
 import '../../shared/widgets/adaptive.dart';
 import '../../shared/widgets/app_card.dart';
 
@@ -330,7 +330,7 @@ class _OptionPickerSheet extends StatefulWidget {
   final String title;
   final String currentValue;
   final bool isStatus;
-  final AppController controller;
+  final AppControllerContract controller;
 
   @override
   State<_OptionPickerSheet> createState() => _OptionPickerSheetState();

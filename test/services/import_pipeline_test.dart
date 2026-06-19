@@ -160,4 +160,40 @@ void main() {
     expect(second.applyDate, '2026-06-15');
     expect(second.salaryRange, '30');
   });
+
+  test('xlsx skips header-only sheet and uses later data sheet', () async {
+    final excel = Excel.createExcel();
+    final oldName = excel.getDefaultSheet()!;
+    excel.rename(oldName, '说明');
+    final sheet1 = excel['说明'];
+    // Sheet 1: only headers, no data rows.
+    sheet1.appendRow([
+      TextCellValue('公司名称'),
+      TextCellValue('岗位名称'),
+      TextCellValue('投递状态'),
+    ]);
+
+    final sheet2 = excel['数据'];
+    sheet2.appendRow([
+      TextCellValue('公司名称'),
+      TextCellValue('岗位名称'),
+      TextCellValue('投递状态'),
+    ]);
+    sheet2.appendRow([
+      TextCellValue('华为'),
+      TextCellValue('AI算法工程师'),
+      TextCellValue('一面'),
+    ]);
+
+    final bytes = Uint8List.fromList(excel.encode()!);
+    final preview = await ImportParser().parseXlsxBytes(
+      bytes,
+      fileName: 'test.xlsx',
+      existing: [],
+    );
+
+    expect(preview.totalRows, 1);
+    expect(preview.rows.first.record.companyName, '华为');
+    expect(preview.rows.first.record.status, 'first_interview');
+  });
 }

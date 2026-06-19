@@ -75,6 +75,23 @@ const priorityLabelsEn = {
 const stageTypeLabels = ['笔试', '一面', '二面', 'HR 面', '电话沟通', '其他'];
 const stageResultLabels = ['待反馈', '通过', '未通过', '取消', '其他'];
 
+const stageTypeLabelsEn = {
+  '笔试': 'Written test',
+  '一面': 'First round',
+  '二面': 'Second round',
+  'HR 面': 'HR round',
+  '电话沟通': 'Phone call',
+  '其他': 'Other',
+};
+
+const stageResultLabelsEn = {
+  '待反馈': 'Pending',
+  '通过': 'Passed',
+  '未通过': 'Failed',
+  '取消': 'Cancelled',
+  '其他': 'Other',
+};
+
 String statusLabel(
   String value, {
   String language = 'zh',

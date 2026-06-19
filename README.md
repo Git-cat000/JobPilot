@@ -1,112 +1,133 @@
-# JobCopilot 求职航线
+# JobPilot
 
-JobCopilot 是一个**离线优先**的求职记录 App，用于管理公司、岗位、投递状态、流程进展、面试复盘、简历版本、备注、表格导入和本地备份。应用默认只在本机保存数据，不接入服务器，不需要账号，不上传用户数据。
+JobPilot is an offline-first Flutter app for tracking job applications, interview stages, resumes, notes, imports, exports, and local backups. It does not require an account, does not use a server, does not sync to cloud storage, and does not upload user data by default.
 
-项目使用 Flutter + SQLite 开发，同一套 Dart 代码同时构建 Android 与 iOS。
+The current Flutter version is **1.2.0+3**. The Flutter package remains `jobpilot_mobile` for technical compatibility; user-visible product names are JobPilot.
 
-## 当前功能
+## v1.2 Highlights
 
-- 投递记录：新增、编辑、删除、详情查看、搜索、状态筛选、方向筛选。
-- 首页看板：总投递、进行中、面试中、Offer 统计，以及最近投递快捷入口。
-- 流程记录：记录笔试、一面、二面、HR 面、电话沟通等过程和复盘。
-- 导入预览：支持 CSV / XLSX，自动映射表头、识别状态和岗位方向，导入前可预览和编辑。
-- 导出备份：支持 CSV、XLSX、`.jobpack` 本地备份包导出和恢复。
-- 自定义选项：可在编辑投递时添加自定义求职状态和岗位方向。
-- 批量操作：投递列表支持多选和快速删除。
-- 语言设置：设置页支持中文 / 英文切换。
-- 自适应 UI：Android 端 Material 3 风格，iOS 端 Cupertino 风格（大标题、Cupertino 导航栏与右滑返回、底部 Tab Bar、确认弹窗、日期滚轮、滑动分段控件），两端共用同一套业务逻辑。
-- 本地安全：所有数据默认保存在本机 SQLite 数据库中，危险操作带确认。
+- Added the `process_terminated` application status for roles that end without being rejected or abandoned.
+- Improved application filters with adaptive selection sheets for status and direction.
+- Improved XLSX import discovery for real spreadsheets with leading notes, empty sheets, decorated headers, typed cells, repeated header rows, and trailing formatted rows.
+- Expanded English UI coverage for navigation, dashboards, lists, detail pages, import preview, statistics, settings, filters, and common dialogs. The application edit form intentionally remains Chinese for now.
+- Added a user-triggered update action in Settings that opens the JobPilot GitHub Releases page. There is no background update polling.
+- Added a local, read-only Web demo that uses seeded in-memory records and keeps mobile SQLite/import/export behavior unchanged.
 
-## 平台支持
+## Platforms
 
-| 平台 | 状态 |
-|---|---|
-| Android | 已完成，debug APK 已发布到 GitHub Release |
-| iOS | 已完成平台配置与 UI 自适应，需在 macOS + Xcode 环境构建 |
+| Platform | Status |
+| --- | --- |
+| Android | Primary mobile target. Uses local SQLite and local file import/export/backup. |
+| iOS | Shares the same Dart app logic and local behavior, with Cupertino-style adaptive UI. Building or installing on a real device requires macOS, Xcode, and normal Apple signing setup. |
+| Web | Local read-only demo only. No persistence, hosting, imports, exports, backup restore, or editing. |
 
-iOS 端在 `ios/Runner/Info.plist` 配置了 `UIFileSharingEnabled` 与 `LSSupportsOpeningDocumentsInPlace`，使导出的文件可在 iOS「文件」App 中访问，行为与 Android 端对齐。
+The iOS simulator workflow in `.github/workflows/ios-simulator-build.yml` builds an unsigned simulator `Runner.app` ZIP artifact. It is not a signed IPA and does not require signing secrets.
 
-## 构建
+## Local Web Demo
 
-### Android（可在 Windows / macOS / Linux）
+Run the read-only demo locally:
 
 ```bash
-flutter pub get
-flutter analyze
-flutter build apk --debug
+flutter run -d chrome
 ```
 
-产物：`build/app/outputs/flutter-apk/app-debug.apk`
-
-### iOS（需要 macOS + Xcode）
+Build static Web output:
 
 ```bash
-flutter pub get
-flutter analyze
-open ios/Runner.xcworkspace   # 在 Xcode 中配置签名 Team 与 Bundle Identifier
-flutter build ipa --release
+flutter build web
 ```
 
-产物：`build/ios/ipa/JobCopilot.ipa`
+Web limitations:
 
-> iOS 构建必须在 macOS 上进行。首次 `flutter pub get` 会通过 Swift Package Manager 解析插件（本仓库无 Podfile，相关生成文件已被 `.gitignore` 忽略）。
+- Seeded demo data only.
+- Editing, deletion, import, export, backup, and restore are hidden or disabled.
+- No SQLite or file-system persistence.
+- The Settings update link remains available and opens GitHub Releases only when clicked.
 
-#### iOS 签名与安装
+## Mobile Features
 
-- 在 Xcode 的 `Runner → Signing & Capabilities` 中选择 Team（个人免费 Apple ID 即可用于真机调试；上架 App Store 需付费 Apple Developer 账号）。
-- 如 `com.jobpilot.jobpilotMobile` 被占用，改成你专属的 Bundle Identifier。
-- 真机安装：用数据线连接 iPhone，Xcode 中 `Runner` 目标选到该设备后 `flutter run -d <device-id>`，或在 Xcode 里直接 Run；首次需在「设置 → 通用 → VPN与设备管理」信任开发者证书。
-- 仅模拟器：`flutter run -d <simulator-id>`，无需签名。
-- 免签名导出（仅模拟器架构，不能装真机）：`flutter build ios --debug --no-codesign`。
+- Create, edit, delete, search, and filter application records.
+- Track status, job direction, city, channel, priority, apply date, follow-up date, JD link, resume version, salary range, and remarks.
+- Record stages such as written tests, interviews, HR conversations, questions, review notes, and next actions.
+- Import CSV/XLSX with header mapping, status detection, direction detection, duplicate checks, and a required preview step before writing data.
+- Export CSV/XLSX with readable spreadsheet headers.
+- Export and restore local `.jobpack` backups containing the SQLite database and version metadata.
+- Dangerous operations such as delete, clear, and backup restore ask for confirmation.
 
-## 本地开发
+## Privacy
 
-环境要求：
+JobPilot is designed for local-first private job tracking:
 
-- Flutter 3.44.x（Dart 3.12.x）
-- Android SDK / Xcode（按目标平台）
+- No login.
+- No server backend.
+- No cloud sync.
+- No automatic job scraping.
+- No automatic upload of job records, resumes, notes, imports, exports, or backups.
+- `.jobpack` files are local backup archives; keep them in a safe place.
 
-常用命令：
+## Build And Test
+
+Install dependencies:
 
 ```bash
 flutter pub get
+```
+
+Run static analysis:
+
+```bash
 flutter analyze
+```
+
+Run tests:
+
+```bash
 flutter test --reporter compact
 ```
 
-## 项目结构
+Run focused tests:
 
-```text
-lib/
-  core/                 主题、枚举、文案
-  data/                 SQLite、模型、Repository
-  features/             首页、投递、导入导出、统计、设置等功能页面
-  shared/               全局状态、自适应组件（adaptive.dart）、通用组件
-assets/rules/           表头映射、状态识别、方向识别规则
-ios/                    iOS 工程与原生配置
-android/                Android 工程与原生配置
-test/                   单元测试和 Widget 测试
-test_data/              导入测试数据
+```bash
+flutter test test/services/demo_app_controller_test.dart --reporter compact
+flutter test test/services/export_pipeline_test.dart --reporter compact
+flutter test test/widget_filter_test.dart --reporter compact
 ```
 
-> 项目内部的产品/数据/交接文档（`docs/`）仅在本地维护，不纳入仓库。
+Build Android debug APK:
 
-## 数据与隐私
-
-- 不需要登录。
-- 不接入云同步。
-- 不自动联网抓取招聘信息。
-- 不上传求职记录、简历信息或本地备份。
-- `.jobpack` 是本地备份包，请自行妥善保存。
-
-## 仓库
-
-```text
-https://github.com/Git-cat000/JobPilot
+```bash
+flutter build apk --debug
 ```
 
-## 已知限制
+Build Android ARM64 release APK:
 
-- 当前 Android 发布的是 debug APK；release APK 需在 Flutter release artifacts 网络可用后重新构建。
-- iOS 端尚未在真机上完成完整人工验收，且实机签名需自行配置开发者 Team。
-- 英文切换已完成基础入口，深层表单和导入页面仍以中文为主，后续可继续补齐完整本地化。
+```bash
+flutter build apk --release --target-platform android-arm64
+```
+
+Output: `build/app/outputs/flutter-apk/app-release.apk`
+Delivered release filename: `dist/jobpilot-v1.2.0-arm64-release.apk`
+
+Build Web:
+
+```bash
+flutter build web
+```
+
+Build iOS on macOS:
+
+```bash
+flutter pub get
+flutter analyze
+flutter build ios --debug --no-codesign --simulator
+```
+
+For real iOS device installation or release distribution, open the iOS project on macOS with Xcode and configure your own Apple signing team and bundle identifier as needed. This repository does not include signing secrets.
+
+## Repository
+
+GitHub Releases:
+
+```text
+https://github.com/Git-cat000/JobPilot/releases
+```

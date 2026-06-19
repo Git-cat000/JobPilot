@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/app_strings.dart';
 import '../../core/enums/job_enums.dart';
 import '../../core/theme/app_theme.dart';
-import '../../shared/state/app_controller.dart';
+import '../../shared/state/app_controller_contract.dart';
 import '../../shared/widgets/adaptive.dart';
 import '../../shared/widgets/app_card.dart';
 
@@ -77,7 +77,7 @@ class StatisticsPage extends StatelessWidget {
     );
   }
 
-  Map<String, int> _channelCounts(AppController controller, AppStrings strings) {
+  Map<String, int> _channelCounts(AppControllerContract controller, AppStrings strings) {
     final counts = <String, int>{};
     for (final item in controller.applications) {
       final key = item.channel.isEmpty ? strings.unfilled : item.channel;

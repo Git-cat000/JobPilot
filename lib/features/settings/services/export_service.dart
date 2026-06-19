@@ -95,6 +95,7 @@ class ExportService {
     required String databasePath,
     required int applicationCount,
     required int stageCount,
+    required String appVersion,
   }) async {
     final exportDir = Directory(await _exportDirPath());
     final file = File(p.join(exportDir.path, _timestamped('jobpack')));
@@ -109,14 +110,14 @@ class ExportService {
           'export_time': now,
           'application_count': applicationCount,
           'stage_count': stageCount,
-          'version': '1.0.0',
+          'version': appVersion,
         }),
       ),
     );
     encoder.addArchiveFile(
       ArchiveFile.string(
         'version.json',
-        jsonEncode({'schema_version': 1, 'app_version': '1.0.0'}),
+        jsonEncode({'schema_version': 1, 'app_version': appVersion}),
       ),
     );
     encoder.close();

@@ -1,3 +1,5 @@
+import 'enums/job_enums.dart';
+
 class AppStrings {
   const AppStrings(this.localeCode);
 
@@ -210,4 +212,20 @@ class AppStrings {
   String get exportFailed => isEn ? 'Export failed' : '导出失败';
   String get openUpdateFailed =>
       isEn ? 'Unable to open the updates page.' : '无法打开更新页面。';
+
+  // ---- 流程类型与结果 ----
+  String stageTypeLabel(String value) =>
+      isEn ? (stageTypeLabelsEn[value] ?? value) : value;
+  String stageResultLabel(String value) =>
+      isEn ? (stageResultLabelsEn[value] ?? value) : value;
+
+  // ---- 导入行状态 ----
+  String importRowStatusLabel(String key) => switch (key) {
+    'importable' => isEn ? 'Importable' : '可导入',
+    'missingRequired' => isEn ? 'Missing required fields' : '缺少必填字段',
+    'suspectedDuplicate' => isEn ? 'Suspected duplicate' : '疑似重复',
+    'possibleDuplicate' => isEn ? 'Possible duplicate' : '可能重复',
+    'invalidField' => isEn ? 'Invalid field' : '字段异常',
+    _ => key,
+  };
 }

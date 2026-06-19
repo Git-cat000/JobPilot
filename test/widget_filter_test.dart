@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:jobpilot_mobile/shared/widgets/filter_picker.dart';
 
@@ -62,5 +63,30 @@ void main() {
     await tester.pump();
     expect(value, 'all');
     expect(find.byIcon(Icons.close), findsNothing);
+  });
+
+  testWidgets('iOS picker uses localized cancel text', (tester) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: FilterPickerButton(
+            value: 'all',
+            options: options,
+            cancelText: 'Cancel',
+            onChanged: (_) {},
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('All status'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Cancel'), findsOneWidget);
+    expect(find.text('取消'), findsNothing);
+    debugDefaultTargetPlatformOverride = null;
   });
 }

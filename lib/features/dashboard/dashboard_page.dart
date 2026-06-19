@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/app_strings.dart';
 import '../../core/enums/job_enums.dart';
 import '../../core/theme/app_theme.dart';
-import '../../shared/state/app_controller.dart';
+import '../../shared/state/app_controller_contract.dart';
 import '../../shared/widgets/adaptive.dart';
 import '../../shared/widgets/app_card.dart';
 import '../applications/application_detail_page.dart';
@@ -45,13 +45,16 @@ class DashboardPage extends StatelessWidget {
           title: strings.appTitle,
           subtitle: controller.isBusy ? strings.loadingLocalData : strings.todayTip,
           actions: [
-            FilledButton.icon(
-              onPressed: () {
-                Navigator.of(context).pushNamed(ApplicationEditPage.routeName);
-              },
-              icon: const Icon(Icons.add),
-              label: Text(strings.add),
-            ),
+            if (!controller.isDemo)
+              FilledButton.icon(
+                onPressed: () {
+                  Navigator.of(context).pushNamed(
+                    ApplicationEditPage.routeName,
+                  );
+                },
+                icon: const Icon(Icons.add),
+                label: Text(strings.add),
+              ),
           ],
         ),
         const SizedBox(height: 16),

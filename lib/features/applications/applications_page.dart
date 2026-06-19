@@ -4,7 +4,7 @@ import '../../core/app_strings.dart';
 import '../../core/enums/job_enums.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/models/application_record.dart';
-import '../../shared/state/app_controller.dart';
+import '../../shared/state/app_controller_contract.dart';
 import '../../shared/widgets/adaptive.dart';
 import '../../shared/widgets/app_card.dart';
 import '../../shared/widgets/filter_picker.dart';
@@ -37,18 +37,19 @@ class _ApplicationsPageState extends State<ApplicationsPage> {
         AdaptiveTabHeader(
           title: strings.jobRecords,
           actions: [
-            FilledButton.tonalIcon(
-              onPressed: () {
-                setState(() {
-                  selecting = !selecting;
-                  selectedIds.clear();
-                });
-              },
-              icon: Icon(selecting ? Icons.close : Icons.checklist_outlined),
-              label: Text(selecting ? strings.done : strings.select),
-            ),
+            if (!controller.isDemo)
+              FilledButton.tonalIcon(
+                onPressed: () {
+                  setState(() {
+                    selecting = !selecting;
+                    selectedIds.clear();
+                  });
+                },
+                icon: Icon(selecting ? Icons.close : Icons.checklist_outlined),
+                label: Text(selecting ? strings.done : strings.select),
+              ),
             const SizedBox(width: 8),
-            if (!selecting)
+            if (!selecting && !controller.isDemo)
               FilledButton.icon(
                 onPressed: () async {
                   await Navigator.of(
@@ -117,6 +118,7 @@ class _ApplicationsPageState extends State<ApplicationsPage> {
           children: [
             FilterPickerButton(
               value: status,
+              cancelText: strings.cancel,
               options: [
                 ('all', strings.allStatus),
                 ...controller.statusOptions().entries.map(
@@ -134,6 +136,7 @@ class _ApplicationsPageState extends State<ApplicationsPage> {
             ),
             FilterPickerButton(
               value: direction,
+              cancelText: strings.cancel,
               options: [
                 ('all', strings.allDirection),
                 ...controller.directionOptions().entries.map(
@@ -225,13 +228,14 @@ class _ApplicationsPageState extends State<ApplicationsPage> {
 
   Future<void> _confirmBulkDelete(
     BuildContext context,
-    AppController controller,
+    AppControllerContract controller,
   ) async {
     final strings = AppStrings(controller.language);
     final ok = await showAdaptiveConfirm(
       context,
       title: strings.bulkDeleteTitle,
       content: strings.bulkDeleteContent(selectedIds.length),
+      cancelText: strings.cancel,
       confirmText: strings.delete,
       destructive: true,
     );
