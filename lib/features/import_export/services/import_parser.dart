@@ -149,6 +149,9 @@ class ImportParser {
     final headers = rows[headerIndex];
     final mapping = _buildMapping(headers);
     final previewRows = <ImportPreviewRow>[];
+    // 同一批次内已构建的可导入记录，用于检测文件内部自身重复：
+    // 仅对比数据库既有记录会让同一文件里的两行相同数据都被判为可导入并重复入库。
+    final batchSeen = <ApplicationRecord>[];
 
     for (final row in rows.skip(headerIndex + 1)) {
       if (row.every((cell) => cell.trim().isEmpty)) {
@@ -194,7 +197,11 @@ class ImportParser {
         remark: values['remark'] ?? '',
       );
 
-      final rowStatus = statusFor(record, existing);
+      // 重复检测同时覆盖数据库既有记录与本批次已见记录。
+      final rowStatus = statusFor(record, [...existing, ...batchSeen]);
+      if (record.hasRequiredFields) {
+        batchSeen.add(record);
+      }
       previewRows.add(
         ImportPreviewRow(
           record: record,

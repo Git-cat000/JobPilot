@@ -161,6 +161,23 @@ void main() {
     expect(second.salaryRange, '30');
   });
 
+  test('flags intra-batch duplicate rows within the same file', () async {
+    // 同一文件里两行完全相同：第二行应被判为疑似重复，而不是两行都 importable。
+    const csvText = '''
+公司,岗位,投递时间
+长鑫存储,半导体算法工程师,2026-06-18
+长鑫存储,半导体算法工程师,2026-06-18
+华为,AI算法工程师,2026-06-15
+''';
+    final preview = await ImportParser().parseCsvText(csvText, existing: []);
+
+    expect(preview.totalRows, 3);
+    expect(preview.rows[0].status, ImportRowStatus.importable);
+    expect(preview.rows[1].status, ImportRowStatus.suspectedDuplicate);
+    expect(preview.rows[2].status, ImportRowStatus.importable);
+    expect(preview.duplicateRows, 1);
+  });
+
   test('xlsx skips header-only sheet and uses later data sheet', () async {    final excel = Excel.createExcel();
     final oldName = excel.getDefaultSheet()!;
     excel.rename(oldName, '说明');

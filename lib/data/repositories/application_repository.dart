@@ -45,19 +45,6 @@ class ApplicationRepository {
     }
   }
 
-  Future<void> insertAll(List<ApplicationRecord> records) async {
-    final db = await database.database;
-    final batch = db.batch();
-    for (final record in records) {
-      batch.insert(
-        'applications',
-        record.toMap(),
-        conflictAlgorithm: ConflictAlgorithm.replace,
-      );
-    }
-    await batch.commit(noResult: true);
-  }
-
   Future<void> delete(String id) async {
     final db = await database.database;
     await db.delete('applications', where: 'id = ?', whereArgs: [id]);
