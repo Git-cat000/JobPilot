@@ -13,6 +13,16 @@ The current Flutter version is **1.2.0+3**. The Flutter package remains `jobpilo
 - Added a user-triggered update action in Settings that opens the JobPilot GitHub Releases page. There is no background update polling.
 - Added a local, read-only Web demo that uses seeded in-memory records and keeps mobile SQLite/import/export behavior unchanged.
 
+### v1.2 Release Hardening
+
+After the initial v1.2 feature set, a hardening pass made persistence and import safer:
+
+- **Editing an application no longer loses its interview stages.** `upsert` switched from `ConflictAlgorithm.replace` (which deletes and re-inserts the row, triggering `ON DELETE CASCADE` on `stages`) to an update-then-insert pattern.
+- **Batch delete, clear-all, and import commits are transactional.** `ApplicationRepository.deleteMany` / `clearAll` and the new `ImportRepository.commit` run inside a single transaction, so a failure mid-batch rolls back instead of leaving partial data.
+- **`.jobpack` restore is atomic and validated.** The replacement database is schema-validated before swap, the original database is backed up to a `.rollback` file, and any reopen/verify failure restores the original. A corrupted or schema-mismatched package is rejected without touching live data.
+- **Import classification no longer mis-labels overlapping phrases.** Status detection now matches the longest keyword, so `未通过` is `rejected` (not `offer` via `通过`) and `谈薪中` / `薪资沟通` are `offer_negotiation` (not `hr_interview`).
+- **Editing an import preview row recomputes its duplicate status**, instead of always resetting to importable, and **duplicate detection now covers rows within the same import file**, not just existing database rows.
+
 ## Platforms
 
 | Platform | Status |
