@@ -18,6 +18,7 @@ import '../../data/repositories/application_repository.dart';
 import '../../data/repositories/app_option_repository.dart';
 import '../../data/repositories/app_settings_repository.dart';
 import '../../data/repositories/import_log_repository.dart';
+import '../../data/repositories/import_repository.dart';
 import '../../data/repositories/stage_repository.dart';
 import '../../features/import_export/services/import_parser.dart';
 import '../../features/settings/services/export_service.dart';
@@ -28,6 +29,7 @@ class AppController extends AppControllerContract {
     ApplicationRepository? applicationRepository,
     StageRepository? stageRepository,
     ImportLogRepository? importLogRepository,
+    ImportRepository? importRepository,
     AppOptionRepository? appOptionRepository,
     AppSettingsRepository? appSettingsRepository,
     ImportParser? importParser,
@@ -35,6 +37,7 @@ class AppController extends AppControllerContract {
   }) : applicationRepository = applicationRepository ?? ApplicationRepository(),
        stageRepository = stageRepository ?? StageRepository(),
        importLogRepository = importLogRepository ?? ImportLogRepository(),
+       importRepository = importRepository ?? ImportRepository(),
        appOptionRepository = appOptionRepository ?? AppOptionRepository(),
        appSettingsRepository = appSettingsRepository ?? AppSettingsRepository(),
        importParser = importParser ?? ImportParser(),
@@ -43,6 +46,7 @@ class AppController extends AppControllerContract {
   final ApplicationRepository applicationRepository;
   final StageRepository stageRepository;
   final ImportLogRepository importLogRepository;
+  final ImportRepository importRepository;
   final AppOptionRepository appOptionRepository;
   final AppSettingsRepository appSettingsRepository;
   final ImportParser importParser;
@@ -150,9 +154,7 @@ class AppController extends AppControllerContract {
 
   @override
   Future<void> deleteApplications(Iterable<String> ids) async {
-    for (final id in ids) {
-      await applicationRepository.delete(id);
-    }
+    await applicationRepository.deleteMany(ids);
     message = strings.deletedApplications(ids.length);
     await reload();
   }
@@ -270,8 +272,8 @@ class AppController extends AppControllerContract {
         .where((row) => row.canImport)
         .map((row) => row.record)
         .toList();
-    await applicationRepository.insertAll(records);
-    await importLogRepository.insert(
+    await importRepository.commit(
+      records,
       ImportLog.create(
         fileName: preview.fileName,
         totalRows: preview.totalRows,

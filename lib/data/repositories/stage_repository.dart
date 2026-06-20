@@ -28,11 +28,19 @@ class StageRepository {
 
   Future<void> upsert(StageRecord record) async {
     final db = await database.database;
-    await db.insert(
+    final count = await db.update(
       'stages',
       record.toMap(),
-      conflictAlgorithm: ConflictAlgorithm.replace,
+      where: 'id = ?',
+      whereArgs: [record.id],
     );
+    if (count == 0) {
+      await db.insert(
+        'stages',
+        record.toMap(),
+        conflictAlgorithm: ConflictAlgorithm.abort,
+      );
+    }
   }
 
   Future<void> delete(String id) async {

@@ -30,11 +30,19 @@ class ApplicationRepository {
 
   Future<void> upsert(ApplicationRecord record) async {
     final db = await database.database;
-    await db.insert(
+    final count = await db.update(
       'applications',
       record.toMap(),
-      conflictAlgorithm: ConflictAlgorithm.replace,
+      where: 'id = ?',
+      whereArgs: [record.id],
     );
+    if (count == 0) {
+      await db.insert(
+        'applications',
+        record.toMap(),
+        conflictAlgorithm: ConflictAlgorithm.abort,
+      );
+    }
   }
 
   Future<void> insertAll(List<ApplicationRecord> records) async {
@@ -55,10 +63,21 @@ class ApplicationRepository {
     await db.delete('applications', where: 'id = ?', whereArgs: [id]);
   }
 
+  Future<void> deleteMany(Iterable<String> ids) async {
+    final db = await database.database;
+    await db.transaction((txn) async {
+      for (final id in ids) {
+        await txn.delete('applications', where: 'id = ?', whereArgs: [id]);
+      }
+    });
+  }
+
   Future<void> clearAll() async {
     final db = await database.database;
-    await db.delete('stages');
-    await db.delete('applications');
-    await db.delete('import_logs');
+    await db.transaction((txn) async {
+      await txn.delete('stages');
+      await txn.delete('applications');
+      await txn.delete('import_logs');
+    });
   }
 }
