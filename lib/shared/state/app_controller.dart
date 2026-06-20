@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:archive/archive_io.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path/path.dart' as p;
@@ -10,6 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/app_strings.dart';
 import '../../core/enums/job_enums.dart';
 import '../../data/db/app_database.dart';
+import '../../data/db/database_restore_exception.dart';
 import '../../data/models/application_record.dart';
 import '../../data/models/app_option.dart';
 import '../../data/models/import_log.dart';
@@ -22,6 +22,7 @@ import '../../data/repositories/import_repository.dart';
 import '../../data/repositories/stage_repository.dart';
 import '../../features/import_export/services/import_parser.dart';
 import '../../features/settings/services/export_service.dart';
+import '../../features/settings/services/jobpack_validator.dart';
 import 'app_controller_contract.dart';
 
 class AppController extends AppControllerContract {
@@ -319,13 +320,30 @@ class AppController extends AppControllerContract {
 
   @override
   Future<File> exportJobpack() async {
-    final databasePath = await AppDatabase.instance.databasePath;
-    return exportService.exportJobpack(
-      databasePath: databasePath,
-      applicationCount: applications.length,
-      stageCount: stages.length,
-      appVersion: version,
-    );
+    isBusy = true;
+    notifyListeners();
+    Directory? snapshotDir;
+    try {
+      // 导出一致快照，绝不直接归档正在打开的活动数据库。
+      final snapshot = await AppDatabase.instance.createSnapshot();
+      snapshotDir = snapshot.parent;
+      return await exportService.exportJobpack(
+        databasePath: snapshot.path,
+        applicationCount: applications.length,
+        stageCount: stages.length,
+        appVersion: version,
+      );
+    } finally {
+      if (snapshotDir != null && snapshotDir.existsSync()) {
+        try {
+          snapshotDir.deleteSync(recursive: true);
+        } catch (_) {
+          // 清理临时快照失败不影响导出结果。
+        }
+      }
+      isBusy = false;
+      notifyListeners();
+    }
   }
 
   @override
@@ -337,19 +355,43 @@ class AppController extends AppControllerContract {
     );
     final file = result?.files.single;
     if (file == null) {
+      // 用户取消选择：清空提示，避免页面误显示上一次的消息。
+      message = '';
+      notifyListeners();
       return;
     }
     final bytes = file.bytes ?? await File(file.path!).readAsBytes();
-    final archive = ZipDecoder().decodeBytes(bytes);
-    final sqlite = archive.files.where((item) => item.name == 'data.sqlite');
-    if (sqlite.isEmpty) {
-      throw StateError('备份包缺少 data.sqlite');
+    try {
+      await restoreJobpackBytes(bytes);
+    } on JobpackValidationException catch (e) {
+      // 失败时设置本地化、不含内部路径的提示，便于 Settings 展示后重新抛出。
+      message = e.localizedMessage(strings);
+      notifyListeners();
+      rethrow;
     }
-    final temp = await Directory.systemTemp.createTemp('jobpilot_restore_');
-    final sqliteFile = File(p.join(temp.path, 'data.sqlite'));
-    sqliteFile.writeAsBytesSync(sqlite.first.content as List<int>);
-    await AppDatabase.instance.replaceWith(sqliteFile);
-    message = strings.restoredBackup;
-    await reload();
+  }
+
+  /// 校验并以原子方式恢复 `.jobpack` 字节数据。
+  ///
+  /// 校验或恢复失败时抛出 [JobpackValidationException]，活动库保持不变；
+  /// 成功时刷新内存状态。临时抽取目录在 `finally` 中清理。
+  Future<void> restoreJobpackBytes(List<int> bytes) async {
+    const validator = JobpackValidator();
+    ValidatedJobpack? extraction;
+    try {
+      extraction = await validator.validate(bytes);
+      try {
+        await AppDatabase.instance.replaceWith(extraction.databaseFile);
+      } on DatabaseRestoreException {
+        // 数据层恢复失败已自动回滚到原库；映射为面向用户的本地化原因。
+        throw const JobpackValidationException(
+          JobpackValidationReason.restoreFailed,
+        );
+      }
+      message = strings.restoredBackup;
+      await reload();
+    } finally {
+      await extraction?.dispose();
+    }
   }
 }
