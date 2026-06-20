@@ -161,8 +161,7 @@ void main() {
     expect(second.salaryRange, '30');
   });
 
-  test('xlsx skips header-only sheet and uses later data sheet', () async {
-    final excel = Excel.createExcel();
+  test('xlsx skips header-only sheet and uses later data sheet', () async {    final excel = Excel.createExcel();
     final oldName = excel.getDefaultSheet()!;
     excel.rename(oldName, '说明');
     final sheet1 = excel['说明'];
@@ -195,5 +194,73 @@ void main() {
     expect(preview.totalRows, 1);
     expect(preview.rows.first.record.companyName, '华为');
     expect(preview.rows.first.record.status, 'first_interview');
+  });
+
+  group('statusFor recompute', () {
+    final parser = ImportParser();
+
+    test('missing required fields wins over duplicate', () {
+      final existing = [
+        ApplicationRecord.create(
+          companyName: '长鑫存储',
+          jobTitle: '半导体算法工程师',
+          applyDate: '2026-06-18',
+        ),
+      ];
+      final record = ApplicationRecord.create(
+        companyName: '长鑫存储',
+        jobTitle: '',
+        applyDate: '2026-06-18',
+      );
+      expect(parser.statusFor(record, existing), ImportRowStatus.missingRequired);
+    });
+
+    test('same company+title+date yields suspectedDuplicate', () {
+      final existing = [
+        ApplicationRecord.create(
+          companyName: '长鑫存储',
+          jobTitle: '半导体算法工程师',
+          applyDate: '2026-06-18',
+        ),
+      ];
+      final record = ApplicationRecord.create(
+        companyName: '长鑫存储',
+        jobTitle: '半导体算法工程师',
+        applyDate: '2026-06-18',
+      );
+      expect(parser.statusFor(record, existing), ImportRowStatus.suspectedDuplicate);
+    });
+
+    test('same company+title but different date yields possibleDuplicate', () {
+      final existing = [
+        ApplicationRecord.create(
+          companyName: '长鑫存储',
+          jobTitle: '半导体算法工程师',
+          applyDate: '2026-06-18',
+        ),
+      ];
+      final record = ApplicationRecord.create(
+        companyName: '长鑫存储',
+        jobTitle: '半导体算法工程师',
+        applyDate: '2026-06-20',
+      );
+      expect(parser.statusFor(record, existing), ImportRowStatus.possibleDuplicate);
+    });
+
+    test('distinct record stays importable', () {
+      final existing = [
+        ApplicationRecord.create(
+          companyName: '长鑫存储',
+          jobTitle: '半导体算法工程师',
+          applyDate: '2026-06-18',
+        ),
+      ];
+      final record = ApplicationRecord.create(
+        companyName: '华为',
+        jobTitle: 'AI算法工程师',
+        applyDate: '2026-06-18',
+      );
+      expect(parser.statusFor(record, existing), ImportRowStatus.importable);
+    });
   });
 }

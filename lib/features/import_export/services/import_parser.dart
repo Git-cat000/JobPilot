@@ -194,10 +194,7 @@ class ImportParser {
         remark: values['remark'] ?? '',
       );
 
-      final duplicateStatus = _duplicateStatus(record, existing);
-      final rowStatus = record.hasRequiredFields
-          ? duplicateStatus ?? ImportRowStatus.importable
-          : ImportRowStatus.missingRequired;
+      final rowStatus = statusFor(record, existing);
       previewRows.add(
         ImportPreviewRow(
           record: record,
@@ -337,6 +334,19 @@ class ImportParser {
       return value.round().toString();
     }
     return value.toString();
+  }
+
+  /// 依据必填字段与重复检测推导一行预览的导入状态。
+  /// 解析与编辑预览行共用此逻辑，确保用户改动公司/岗位/投递日期后
+  /// 重复状态会被重新计算（而不是一律回到 importable）。
+  ImportRowStatus statusFor(
+    ApplicationRecord record,
+    List<ApplicationRecord> existing,
+  ) {
+    if (!record.hasRequiredFields) {
+      return ImportRowStatus.missingRequired;
+    }
+    return _duplicateStatus(record, existing) ?? ImportRowStatus.importable;
   }
 
   ImportRowStatus? _duplicateStatus(

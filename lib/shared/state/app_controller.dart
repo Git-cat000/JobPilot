@@ -295,9 +295,8 @@ class AppController extends AppControllerContract {
     if (preview == null || index < 0 || index >= preview.rows.length) {
       return;
     }
-    final status = record.hasRequiredFields
-        ? ImportRowStatus.importable
-        : ImportRowStatus.missingRequired;
+    // 改动公司/岗位/投递日期后需重新判定重复状态，与解析阶段一致。
+    final status = importParser.statusFor(record, applications);
     final rows = [...preview.rows];
     rows[index] = ImportPreviewRow(
       record: record,
