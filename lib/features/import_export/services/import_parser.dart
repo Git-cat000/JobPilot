@@ -149,6 +149,9 @@ class ImportParser {
     final headers = rows[headerIndex];
     final mapping = _buildMapping(headers);
     final previewRows = <ImportPreviewRow>[];
+    // 同一批次内已构建的可导入记录，用于检测文件内部自身重复：
+    // 仅对比数据库既有记录会让同一文件里的两行相同数据都被判为可导入并重复入库。
+    final batchSeen = <ApplicationRecord>[];
 
     for (final row in rows.skip(headerIndex + 1)) {
       if (row.every((cell) => cell.trim().isEmpty)) {
@@ -194,10 +197,11 @@ class ImportParser {
         remark: values['remark'] ?? '',
       );
 
-      final duplicateStatus = _duplicateStatus(record, existing);
-      final rowStatus = record.hasRequiredFields
-          ? duplicateStatus ?? ImportRowStatus.importable
-          : ImportRowStatus.missingRequired;
+      // 重复检测同时覆盖数据库既有记录与本批次已见记录。
+      final rowStatus = statusFor(record, [...existing, ...batchSeen]);
+      if (record.hasRequiredFields) {
+        batchSeen.add(record);
+      }
       previewRows.add(
         ImportPreviewRow(
           record: record,
@@ -337,6 +341,19 @@ class ImportParser {
       return value.round().toString();
     }
     return value.toString();
+  }
+
+  /// 依据必填字段与重复检测推导一行预览的导入状态。
+  /// 解析与编辑预览行共用此逻辑，确保用户改动公司/岗位/投递日期后
+  /// 重复状态会被重新计算（而不是一律回到 importable）。
+  ImportRowStatus statusFor(
+    ApplicationRecord record,
+    List<ApplicationRecord> existing,
+  ) {
+    if (!record.hasRequiredFields) {
+      return ImportRowStatus.missingRequired;
+    }
+    return _duplicateStatus(record, existing) ?? ImportRowStatus.importable;
   }
 
   ImportRowStatus? _duplicateStatus(

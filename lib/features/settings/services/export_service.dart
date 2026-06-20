@@ -9,6 +9,7 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
 import '../../../core/enums/job_enums.dart';
+import '../../../data/db/app_database.dart';
 import '../../../data/models/application_record.dart';
 
 class ExportService {
@@ -117,7 +118,10 @@ class ExportService {
     encoder.addArchiveFile(
       ArchiveFile.string(
         'version.json',
-        jsonEncode({'schema_version': 1, 'app_version': appVersion}),
+        jsonEncode({
+          'schema_version': AppDatabase.schemaVersion,
+          'app_version': appVersion,
+        }),
       ),
     );
     encoder.close();

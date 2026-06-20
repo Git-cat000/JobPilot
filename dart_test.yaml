@@ -1,0 +1,3 @@
+# Database integration tests share the app's singleton SQLite path.
+# Run test files serially so independent isolates cannot replace the same DB.
+concurrency: 1

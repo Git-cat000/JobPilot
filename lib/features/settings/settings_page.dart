@@ -35,32 +35,30 @@ class SettingsPage extends StatelessWidget {
               const SizedBox(height: 8),
               AdaptiveSegmentedControl<String>(
                 value: controller.language,
-                options: [
-                  ('zh', strings.chinese),
-                  ('en', strings.english),
-                ],
+                options: [('zh', strings.chinese), ('en', strings.english)],
                 onChanged: controller.setLanguage,
               ),
               const SizedBox(height: 14),
               _SettingsAction(
                 icon: Icons.file_download_outlined,
                 label: strings.exportCsv,
-                onTap:
-                    demo ? null : () => _export(context, controller.exportCsv()),
+                onTap: demo
+                    ? null
+                    : () => _export(context, controller.exportCsv()),
               ),
               _SettingsAction(
                 icon: Icons.grid_on_outlined,
                 label: strings.exportXlsx,
-                onTap:
-                    demo ? null : () => _export(context, controller.exportXlsx()),
+                onTap: demo
+                    ? null
+                    : () => _export(context, controller.exportXlsx()),
               ),
               _SettingsAction(
                 icon: Icons.inventory_2_outlined,
                 label: strings.exportJobpack,
-                onTap:
-                    demo
-                        ? null
-                        : () => _export(context, controller.exportJobpack()),
+                onTap: demo
+                    ? null
+                    : () => _export(context, controller.exportJobpack()),
               ),
               _SettingsAction(
                 icon: Icons.restore_outlined,
@@ -85,8 +83,9 @@ class SettingsPage extends StatelessWidget {
               Text(strings.localDataDesc),
               const SizedBox(height: 12),
               OutlinedButton.icon(
-                onPressed:
-                    demo ? null : () => _confirmClear(context, controller),
+                onPressed: demo
+                    ? null
+                    : () => _confirmClear(context, controller),
                 icon: const Icon(Icons.delete_forever_outlined),
                 label: Text(strings.clearAll),
               ),
@@ -138,6 +137,7 @@ class SettingsPage extends StatelessWidget {
     AppControllerContract controller,
   ) async {
     final strings = AppStrings(controller.language);
+    final messenger = ScaffoldMessenger.of(context);
     final ok = await showAdaptiveConfirm(
       context,
       title: strings.restoreTitle,
@@ -145,8 +145,16 @@ class SettingsPage extends StatelessWidget {
       cancelText: strings.cancel,
       confirmText: strings.restoreAction,
     );
-    if (ok) {
+    if (!ok) {
+      return;
+    }
+    try {
       await controller.importJobpack();
+    } catch (_) {
+      // 恢复失败：控制器已设置本地化错误消息（不含内部路径/堆栈）。
+    }
+    if (controller.message.isNotEmpty) {
+      messenger.showSnackBar(SnackBar(content: Text(controller.message)));
     }
   }
 }

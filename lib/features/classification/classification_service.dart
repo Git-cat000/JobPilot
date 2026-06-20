@@ -15,7 +15,7 @@ class ClassificationService {
     'hr_interview': ['HR', 'hr', '谈薪', '薪资', '人事'],
     'offer': ['offer', 'Offer', '录用', '意向书', '通过'],
     'rejected': ['拒', '挂', '不合适', '感谢关注', '未通过'],
-    'applied': ['已投', '投递完成', '等待反馈', '简历筛选'],
+    'applied': ['已投', '投递完成', '等待反馈'],
     // 显式「流程终止」必须在通用放弃规则之前匹配，避免被 abandoned 的「终止」吞掉。
     'process_terminated': ['流程终止', '终止流程'],
     'abandoned': ['放弃', '不投', '取消', '终止'],
@@ -80,12 +80,21 @@ class ClassificationService {
     if (source.isEmpty) {
       return 'applied';
     }
+    // 取最长命中关键词所属的状态，避免短词遮蔽长词：
+    // 例如「未通过」应命中 rejected 的「未通过」而非 offer 的「通过」，
+    // 「谈薪中」应命中 offer_negotiation 的「谈薪中」而非 hr_interview 的「谈薪」。
+    // 等长并列时保留规则声明顺序（首个命中胜出）。
+    String? bestKey;
+    var bestLen = 0;
     for (final entry in statusRules.entries) {
-      if (entry.value.any(source.contains)) {
-        return entry.key;
+      for (final keyword in entry.value) {
+        if (source.contains(keyword) && keyword.length > bestLen) {
+          bestLen = keyword.length;
+          bestKey = entry.key;
+        }
       }
     }
-    return 'applied';
+    return bestKey ?? 'applied';
   }
 
   String detectDirection(String text) {
